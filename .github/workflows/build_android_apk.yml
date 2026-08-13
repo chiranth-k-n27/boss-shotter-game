@@ -28,6 +28,8 @@ jobs:
 
       - name: Build Unity Android APK
         uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           targetPlatform: Android
           unityVersion: 2022.3.20f1
