@@ -3,85 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - AAA HD Graphics & Pitch Aim</title>
+    <title>TITAN STRIKE AAA - Institutional 3D Boss Battle Engine</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0b1120; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050811; font-family: 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
         /* HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Level & Player HP Container */
-        #player-stats-container { position: absolute; top: 15px; left: 20px; display: flex; flex-direction: column; gap: 6px; }
-        #level-banner { color: #ffcc00; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
+        /* Player Stats Box */
+        #player-stats-container { position: absolute; top: 20px; left: 25px; display: flex; flex-direction: column; gap: 8px; }
+        #level-banner { color: #ffb700; font-size: 26px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 15px rgba(255,183,0,0.8), 2px 2px 4px #000; }
 
-        /* Player Health Bar */
-        #player-hp-box { width: 220px; background: rgba(15, 23, 42, 0.85); border: 2px solid #00f0ff; border-radius: 8px; padding: 6px; box-shadow: 0 0 12px rgba(0,240,255,0.4); }
-        #player-hp-label { color: #00f0ff; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; display: flex; justify-content: space-between; }
-        #player-hp-bar { width: 100%; height: 12px; background: #0f172a; border-radius: 4px; overflow: hidden; border: 1px solid #1e293b; }
+        /* AAA Metallic Player Health Bar */
+        #player-hp-box { width: 250px; background: rgba(10, 16, 30, 0.85); border: 2px solid #00f0ff; border-radius: 10px; padding: 8px; box-shadow: 0 0 15px rgba(0,240,255,0.4); backdrop-filter: blur(8px); }
+        #player-hp-label { color: #00f0ff; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        #player-hp-bar { width: 100%; height: 14px; background: #0b1329; border-radius: 5px; overflow: hidden; border: 1px solid #1e293b; }
         #player-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #00f0ff); transition: width 0.15s ease-out; }
 
-        #pc-controls-help { color: #94a3b8; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; margin-top: 4px; }
+        #pc-controls-help { color: #94a3b8; font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.65); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #00f0ff; }
 
-        /* Free Fire Style Boss Health Bar */
-        #boss-hp-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: rgba(15, 20, 30, 0.9); border: 2px solid #ff0055; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 0 20px rgba(255,0,85,0.5); }
-        #boss-title { color: #ff0055; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        #boss-hp-bar { width: 100%; height: 20px; background: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #374151; margin-bottom: 4px; }
-        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff5500); transition: width 0.15s ease-out; }
-        #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; }
-        #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 2px; }
+        /* AAA Boss Health Bar Banner */
+        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 520px; background: rgba(12, 18, 32, 0.92); border: 2px solid #ff0055; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 0 25px rgba(255,0,85,0.5); backdrop-filter: blur(8px); }
+        #boss-title { color: #ff0055; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(255,0,85,0.8); }
+        #boss-hp-bar { width: 100%; height: 22px; background: #0f172a; border-radius: 7px; overflow: hidden; border: 1px solid #374151; margin-bottom: 4px; }
+        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff6600); transition: width 0.15s ease-out; }
+        #boss-hp-text { color: #ffffff; font-size: 14px; font-weight: 800; text-shadow: 1px 1px 3px #000; }
+        #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 4px; letter-spacing: 1px; }
 
         /* Virtual Touch Joystick Overlay */
-        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; }
-        #joystick-knob { width: 50px; height: 50px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 135px; height: 135px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.35); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; backdrop-filter: blur(4px); }
+        #joystick-knob { width: 55px; height: 55px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 15px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
 
-        /* Free Fire Dynamic Red Aim-Assist Crosshair */
-        #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; pointer-events: none; }
+        /* AAA Dynamic Red Aim Lock Crosshair */
+        #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; pointer-events: none; }
         #crosshair-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: #ffffff; border-radius: 50%; border: 2px solid #000; transition: background 0.1s, transform 0.1s; }
         #crosshair-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; transition: border-color 0.1s, transform 0.1s; }
-        #crosshair-container.aim-locked #crosshair-dot { background: #ff0000; transform: translate(-50%, -50%) scale(1.4); box-shadow: 0 0 10px #ff0000; }
-        #crosshair-container.aim-locked #crosshair-ring { border-color: #ff0000; transform: scale(1.1); box-shadow: 0 0 15px rgba(255,0,0,0.8); }
+        #crosshair-container.aim-locked #crosshair-dot { background: #ff0000; transform: translate(-50%, -50%) scale(1.5); box-shadow: 0 0 12px #ff0000; }
+        #crosshair-container.aim-locked #crosshair-ring { border-color: #ff0000; transform: scale(1.15); box-shadow: 0 0 20px rgba(255,0,0,0.9); }
 
         /* Ammo Display */
-        #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 0 0 12px #000, 2px 2px 4px #000; }
-        #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; }
+        #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 38px; font-weight: 900; text-shadow: 0 0 15px #000, 2px 2px 4px #000; }
+        #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Action Buttons */
-        .btn-action { position: absolute; width: 72px; height: 72px; background: rgba(20, 30, 48, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 15px rgba(0,170,255,0.4); text-transform: uppercase; }
-        .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.92); }
-        #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
-        #btn-ads { bottom: 145px; right: 35px; background: rgba(0, 150, 255, 0.85); }
-        #btn-reload { bottom: 145px; right: 120px; }
-        #btn-cam-toggle { top: 125px; left: 20px; width: auto; height: 38px; padding: 0 16px; border-radius: 19px; font-size: 12px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
-        #btn-lockon { bottom: 225px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(255, 165, 0, 0.9); border-color: #ffaa00; }
-        #btn-craft { bottom: 45px; left: 190px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
+        .btn-action { position: absolute; width: 75px; height: 75px; background: rgba(15, 23, 42, 0.88); border: 2px solid #00f0ff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 18px rgba(0,240,255,0.4); text-transform: uppercase; backdrop-filter: blur(6px); }
+        .btn-action:active { background: rgba(0, 240, 255, 0.9); transform: scale(0.92); }
+        #btn-fire { bottom: 45px; right: 135px; width: 95px; height: 95px; background: rgba(225, 29, 72, 0.92); border-color: #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.7); font-size: 17px; }
+        #btn-ads { bottom: 155px; right: 35px; background: rgba(2, 132, 199, 0.88); }
+        #btn-reload { bottom: 155px; right: 125px; }
+        #btn-cam-toggle { top: 135px; left: 25px; width: auto; height: 40px; padding: 0 18px; border-radius: 20px; font-size: 12px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
+        #btn-lockon { bottom: 240px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(245, 158, 11, 0.9); border-color: #fbbf24; }
+        #btn-craft { bottom: 45px; left: 200px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(14, 165, 233, 0.9); border-color: #38bdf8; font-size: 14px; }
 
         /* Damage Popups */
         #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .floating-damage { position: absolute; font-weight: 900; font-size: 32px; text-shadow: 0 0 8px #000, 2px 2px 4px #000; animation: floatUp 0.75s ease-out forwards; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-30px) scale(1.3); } 100% { opacity: 0; transform: translateY(-60px) scale(1); } }
+        .floating-damage { position: absolute; font-weight: 900; font-size: 34px; text-shadow: 0 0 10px #000, 2px 2px 5px #000; animation: floatUp 0.75s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-35px) scale(1.35); } 100% { opacity: 0; transform: translateY(-70px) scale(1); } }
 
         /* Overhead Boss Tag */
-        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(220,0,85,0.9); padding: 4px 12px; border-radius: 12px; border: 2px solid #ffffff; box-shadow: 0 0 15px rgba(255,0,85,0.8); }
+        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(225,0,85,0.92); padding: 5px 14px; border-radius: 12px; border: 2px solid #ffffff; box-shadow: 0 0 20px rgba(255,0,85,0.8); }
 
         /* Challenge Widget */
-        #challenge-widget { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.95); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px 20px; color: #fff; font-size: 14px; display: none; text-align: center; }
+        #challenge-widget { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px 22px; color: #fff; font-size: 14px; display: none; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
 
         /* Crafting Bench Modal */
-        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 780px; height: 82%; max-height: 520px; background: rgba(10, 15, 25, 0.96); border: 2px solid #00f0ff; border-radius: 14px; z-index: 100; display: none; padding: 22px; box-shadow: 0 0 35px rgba(0,240,255,0.4); color: #fff; }
-        .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f293d; padding-bottom: 12px; margin-bottom: 16px; }
-        .crafting-body { display: flex; height: calc(100% - 115px); gap: 20px; }
+        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 800px; height: 82%; max-height: 540px; background: rgba(10, 15, 28, 0.96); border: 2px solid #00f0ff; border-radius: 14px; z-index: 100; display: none; padding: 24px; box-shadow: 0 0 40px rgba(0,240,255,0.45); color: #fff; backdrop-filter: blur(10px); }
+        .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 16px; }
+        .crafting-body { display: flex; height: calc(100% - 120px); gap: 20px; }
         .attachment-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .att-btn { background: rgba(20, 30, 50, 0.85); border: 1px solid #2b3e5a; padding: 12px; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; text-align: left; transition: all 0.2s; }
-        .att-btn:hover, .att-btn.active { background: rgba(0, 170, 255, 0.35); border-color: #00f0ff; }
-        .stats-panel { flex: 1; background: rgba(15, 23, 38, 0.95); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-around; }
+        .att-btn { background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; padding: 12px; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .att-btn:hover, .att-btn.active { background: rgba(14, 165, 233, 0.35); border-color: #00f0ff; }
+        .stats-panel { flex: 1; background: rgba(15, 23, 42, 0.95); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; justify-content: space-around; }
         .stat-row { display: flex; flex-direction: column; gap: 4px; }
         .stat-label { display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8; font-weight: 700; }
         .stat-bar-bg { width: 100%; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; }
-        .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00f0ff, #0077ff); width: 50%; transition: width 0.2s; }
-        #btn-close-craft { align-self: center; margin-top: 15px; padding: 12px 36px; background: #00aaff; border: none; border-radius: 8px; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; }
+        .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00f0ff, #0284c7); width: 50%; transition: width 0.2s; }
+        #btn-close-craft { align-self: center; margin-top: 15px; padding: 12px 38px; background: #0284c7; border: none; border-radius: 8px; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -89,7 +89,7 @@
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
-    <div id="boss-tag">💥 TITAN BOSS</div>
+    <div id="boss-tag">💥 MECH TITAN BOSS</div>
 
     <div id="hud-container">
         <div id="player-stats-container">
@@ -105,7 +105,7 @@
         </div>
 
         <div id="boss-hp-container">
-            <div id="boss-title">👹 TITAN MONSTER BOSS</div>
+            <div id="boss-title">👹 TITAN MECH WARRIOR</div>
             <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
             <div id="boss-hp-text">1000 / 1000 HP</div>
             <div id="boss-phase-badge">PHASE 1: PATROL & APPROACH</div>
@@ -174,12 +174,20 @@
     </div>
 
 <script>
+    // AAA WebGL Engine Core
     let scene, camera, renderer;
-    let playerGroup, playerBody, headMesh, gunMesh;
-    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
+    let playerGroup, playerBody, headMesh, gunMesh, leftLeg, rightLeg;
+    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftArm, bossRightArm, bossCoreLight;
     let hitboxes = [];
     let rockObstacles = [];
     let tracerBeams = [];
+    let particleSparks = [];
+
+    // Web Audio Synthesizer (Zero External Dependencies!)
+    let audioCtx = null;
+
+    // Procedural PBR Textures
+    let grassNormalMap, metalRoughnessMap, stoneNormalMap;
 
     // Camera Modes: TPV, FPV, CINEMATIC
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
@@ -188,6 +196,7 @@
     // Player State
     let playerMaxHP = 100, playerCurrentHP = 100;
     let playerRadius = 0.6;
+    let animTime = 0;
 
     // Game Progression
     let currentLevel = 1;
@@ -203,6 +212,7 @@
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
+    let recoilOffset = 0;
 
     // Challenge System
     let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
@@ -225,8 +235,8 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x38bdf8);
-        scene.fog = new THREE.FogExp2(0x38bdf8, 0.003);
+        scene.background = new THREE.Color(0x0e1726);
+        scene.fog = new THREE.FogExp2(0x0e1726, 0.003);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
 
@@ -234,19 +244,22 @@
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ultra Soft High Quality Shadows
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // AAA Cinematic HDR Tone Mapping
-        renderer.toneMappingExposure = 1.1;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
         renderer.outputEncoding = THREE.sRGBEncoding;
 
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // High Quality Cinematic Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+        // Generate Procedural Textures
+        generateProceduralTextures();
+
+        // High Quality Lighting
+        const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.8);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.5);
-        sunLight.position.set(60, 120, 60);
+        const sunLight = new THREE.DirectionalLight(0xffedd5, 1.6);
+        sunLight.position.set(70, 140, 70);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
@@ -255,19 +268,25 @@
 
         // Ground Terrain with PBR Shaders
         const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7, metalness: 0.05 });
+        const groundMat = new THREE.MeshStandardMaterial({ 
+            color: 0x15803d, 
+            roughness: 0.8, 
+            metalness: 0.05,
+            bumpMap: grassNormalMap,
+            bumpScale: 0.15
+        });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        const infiniteGrid = new THREE.GridHelper(2000, 120, 0xffffff, 0x15803d);
+        const infiniteGrid = new THREE.GridHelper(2000, 120, 0x00f0ff, 0x166534);
         infiniteGrid.position.y = 0.02;
         scene.add(infiniteGrid);
 
         createStoneCoverStructures();
-        createPlayerHero();
-        createBossTitan();
+        createPlayerHeroAAA();
+        createBossTitanAAA();
         faceBoss();
 
         recalculateStats();
@@ -276,6 +295,87 @@
         setupCraftingUI();
 
         setInterval(startRandomChallenge, 30000);
+    }
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+
+        if (type === 'fire') {
+            // AAA Gunfire Sound (Explosive Noise + Sub Bass)
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+        else if (type === 'hit') {
+            // Hit sound
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+        else if (type === 'crit') {
+            // Headshot Crit Sound (High Pitch Ding)
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1400, now);
+            osc.frequency.exponentialRampToValueAtTime(900, now + 0.15);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+    }
+
+    function generateProceduralTextures() {
+        // Grass Normal Map Canvas
+        const c1 = document.createElement('canvas');
+        c1.width = 256; c1.height = 256;
+        const ctx1 = c1.getContext('2d');
+        ctx1.fillStyle = '#808080'; ctx1.fillRect(0,0,256,256);
+        for(let i=0; i<3000; i++) {
+            ctx1.fillStyle = Math.random() > 0.5 ? '#909090' : '#707070';
+            ctx1.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+        }
+        grassNormalMap = new THREE.CanvasTexture(c1);
+        grassNormalMap.wrapS = THREE.RepeatWrapping;
+        grassNormalMap.wrapT = THREE.RepeatWrapping;
+        grassNormalMap.repeat.set(40, 40);
+
+        // Stone Texture Canvas
+        const c2 = document.createElement('canvas');
+        c2.width = 256; c2.height = 256;
+        const ctx2 = c2.getContext('2d');
+        ctx2.fillStyle = '#808080'; ctx2.fillRect(0,0,256,256);
+        for(let i=0; i<500; i++) {
+            ctx2.fillStyle = '#a0a0a0';
+            ctx2.fillRect(Math.random()*256, Math.random()*256, 4, 4);
+        }
+        stoneNormalMap = new THREE.CanvasTexture(c2);
     }
 
     function createStoneCoverStructures() {
@@ -289,8 +389,14 @@
             [25, 4.0, 20, 4.5]
         ];
 
-        const rockGeo = new THREE.DodecahedronGeometry(1);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, metalness: 0.2 });
+        const rockGeo = new THREE.DodecahedronGeometry(1, 1);
+        const rockMat = new THREE.MeshStandardMaterial({ 
+            color: 0x475569, 
+            roughness: 0.85, 
+            metalness: 0.2,
+            bumpMap: stoneNormalMap,
+            bumpScale: 0.1
+        });
 
         rockPositions.forEach(([x, y, z, r]) => {
             const rock = new THREE.Mesh(rockGeo, rockMat);
@@ -305,65 +411,121 @@
         });
     }
 
-    function createPlayerHero() {
+    function createPlayerHeroAAA() {
         playerGroup = new THREE.Group();
         playerGroup.position.set(0, 0, -10);
         scene.add(playerGroup);
 
-        // Player Torso (Glossy Tactical Metallic Outfit)
-        const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
-        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.4 });
+        // Detailed AAA Soldier Body
+        const torsoGeo = new THREE.BoxGeometry(0.85, 1.25, 0.55);
+        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.35, metalness: 0.5 });
         playerBody = new THREE.Mesh(torsoGeo, torsoMat);
-        playerBody.position.y = 1.2;
+        playerBody.position.y = 1.25;
         playerBody.castShadow = true;
         playerGroup.add(playerBody);
 
-        // Player Head
+        // Tactical Armor Chestplate
+        const armorGeo = new THREE.BoxGeometry(0.9, 0.7, 0.6);
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+        const armor = new THREE.Mesh(armorGeo, armorMat);
+        armor.position.set(0, 1.4, 0);
+        playerGroup.add(armor);
+
+        // Tactical Helmet Head
         const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 });
+        const headMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
         headMesh = new THREE.Mesh(headGeo, headMat);
-        headMesh.position.y = 2.1;
+        headMesh.position.y = 2.15;
         playerGroup.add(headMesh);
 
-        // Player Gun (Tactical High-Res Metallic Mesh)
-        const gunGeo = new THREE.BoxGeometry(0.18, 0.22, 0.95);
-        const gunMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.9 });
-        gunMesh = new THREE.Mesh(gunGeo, gunMat);
-        gunMesh.position.set(0.35, 1.5, 0.5); // Positioned nicely at chest/shoulder level
-        gunMesh.castShadow = true;
+        // Glowing Visor
+        const visorGeo = new THREE.BoxGeometry(0.4, 0.12, 0.2);
+        const visorMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.8 });
+        const visor = new THREE.Mesh(visorGeo, visorMat);
+        visor.position.set(0, 2.18, 0.25);
+        playerGroup.add(visor);
+
+        // Animated Legs
+        const legGeo = new THREE.BoxGeometry(0.35, 0.9, 0.4);
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        leftLeg = new THREE.Mesh(legGeo, legMat);
+        leftLeg.position.set(-0.25, 0.45, 0);
+        playerGroup.add(leftLeg);
+
+        rightLeg = new THREE.Mesh(legGeo, legMat);
+        rightLeg.position.set(0.25, 0.45, 0);
+        playerGroup.add(rightLeg);
+
+        // AAA Detailed Assault Rifle
+        const gunGroup = new THREE.Group();
+        
+        const bodyGun = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.95), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.9 }));
+        const scopeGun = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.5 }));
+        scopeGun.rotation.x = Math.PI / 2;
+        scopeGun.position.set(0, 0.15, 0);
+
+        const barrelGun = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.95 }));
+        barrelGun.rotation.x = Math.PI / 2;
+        barrelGun.position.set(0, 0, 0.6);
+
+        gunGroup.add(bodyGun);
+        gunGroup.add(scopeGun);
+        gunGroup.add(barrelGun);
+
+        gunMesh = gunGroup;
+        gunMesh.position.set(0.4, 1.45, 0.5);
         playerGroup.add(gunMesh);
     }
 
-    function createBossTitan() {
+    function createBossTitanAAA() {
         bossGroup = new THREE.Group();
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // Metallic Armor Boss Body
-        const bodyGeo = new THREE.CylinderGeometry(2.5, 3.0, 7.0, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.5 });
+        // Heavy Armored Mech Titan Body
+        const bodyGeo = new THREE.CylinderGeometry(2.6, 3.2, 7.5, 16);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35, metalness: 0.6 });
         bossBody = new THREE.Mesh(bodyGeo, bodyMat);
-        bossBody.position.y = 3.5;
+        bossBody.position.y = 3.75;
         bossBody.castShadow = true;
         bossBody.userData = { type: 'Body' };
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // Head Weakspot (Glowing High-Emissive Yellow Skull)
-        const headGeo = new THREE.SphereGeometry(2.2, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.5, roughness: 0.2 });
+        // Glowing Titan Core Light
+        const coreGeo = new THREE.SphereGeometry(1.2, 16, 16);
+        const coreMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.9 });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        core.position.set(0, 4.0, 2.0);
+        bossGroup.add(core);
+
+        // Head Weakspot (Glowing Yellow Mech Skull)
+        const headGeo = new THREE.SphereGeometry(2.3, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.6, roughness: 0.2 });
         bossHead = new THREE.Mesh(headGeo, headMat);
-        bossHead.position.y = 8.5;
+        bossHead.position.y = 8.8;
         bossHead.castShadow = true;
         bossHead.userData = { type: 'Head' };
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
+        // Mech Shoulder Cannons & Arms
+        const armGeo = new THREE.CylinderGeometry(0.8, 0.8, 5.0, 12);
+        const armMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+        
+        bossLeftArm = new THREE.Mesh(armGeo, armMat);
+        bossLeftArm.position.set(-3.6, 4.5, 0);
+        bossGroup.add(bossLeftArm);
+
+        bossRightArm = new THREE.Mesh(armGeo, armMat);
+        bossRightArm.position.set(3.6, 4.5, 0);
+        bossGroup.add(bossRightArm);
+
         // Chest Armor Shield
-        const armorGeo = new THREE.BoxGeometry(3.5, 3.5, 0.8);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.1 });
+        const armorGeo = new THREE.BoxGeometry(3.6, 3.6, 0.85);
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.95, roughness: 0.1 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
-        bossArmor.position.set(0, 3.5, -3.2);
+        bossArmor.position.set(0, 3.75, -3.4);
         bossArmor.userData = { type: 'Armor' };
         bossGroup.add(bossArmor);
         hitboxes.push(bossArmor);
@@ -389,17 +551,16 @@
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
 
-        // In FPV: Hide head & torso, but KEEP GUN VISIBLE in front of camera!
         if (mode === 'FPV') {
             playerBody.visible = false;
             headMesh.visible = false;
             gunMesh.visible = true;
-            gunMesh.position.set(0.2, 1.9, 0.6); // Position gun right in sight view
+            gunMesh.position.set(0.2, 1.9, 0.6);
         } else {
             playerBody.visible = true;
             headMesh.visible = true;
             gunMesh.visible = true;
-            gunMesh.position.set(0.35, 1.5, 0.5);
+            gunMesh.position.set(0.4, 1.45, 0.5);
         }
     }
 
@@ -432,6 +593,7 @@
 
         container.addEventListener('touchstart', e => {
             active = true;
+            initAudio();
             const rect = container.getBoundingClientRect();
             center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
             updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
@@ -445,6 +607,7 @@
 
         container.addEventListener('mousedown', e => {
             active = true;
+            initAudio();
             const rect = container.getBoundingClientRect();
             center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
             updateJoystick(e.clientX, e.clientY);
@@ -459,6 +622,7 @@
     function setupInputHandlers() {
         const keys = {};
         window.addEventListener('keydown', e => {
+            initAudio();
             keys[e.code] = true;
             if (e.code === 'KeyR') reloadWeapon();
             if (e.code === 'KeyV') toggleCameraView();
@@ -467,18 +631,19 @@
 
         const container = document.getElementById('canvas-container');
         container.addEventListener('click', () => {
+            initAudio();
             document.body.requestPointerLock();
         });
 
         window.addEventListener('mousemove', e => {
             if (document.pointerLockElement === document.body) {
                 cameraYaw -= e.movementX * 0.0025;
-                // Pitch look up/down clamping
                 cameraPitch = Math.max(-0.6, Math.min(0.6, cameraPitch + e.movementY * 0.0025));
             }
         });
 
         window.addEventListener('mousedown', e => {
+            initAudio();
             if (e.target.closest('.hud-element') || e.target.closest('#crafting-panel')) return;
             if (e.button === 0) isFiring = true;
             if (e.button === 2) isADS = !isADS;
@@ -487,6 +652,7 @@
 
         let lastTouchPos = { x: 0, y: 0 };
         window.addEventListener('touchstart', e => {
+            initAudio();
             for (let t of e.touches) {
                 if (t.clientX > window.innerWidth / 2) {
                     lastTouchPos = { x: t.clientX, y: t.clientY };
@@ -507,9 +673,9 @@
         });
 
         const btnFire = document.getElementById('btn-fire');
-        btnFire.addEventListener('touchstart', e => { isFiring = true; e.stopPropagation(); });
+        btnFire.addEventListener('touchstart', e => { initAudio(); isFiring = true; e.stopPropagation(); });
         btnFire.addEventListener('touchend', e => { isFiring = false; e.stopPropagation(); });
-        btnFire.addEventListener('mousedown', e => { isFiring = true; e.stopPropagation(); });
+        btnFire.addEventListener('mousedown', e => { initAudio(); isFiring = true; e.stopPropagation(); });
         btnFire.addEventListener('mouseup', e => { isFiring = false; e.stopPropagation(); });
 
         document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
@@ -523,7 +689,7 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // Fixed WASD A & D Strafe Mapping: D = Right (+1), A = Left (-1)
+        // WASD Strafe Mapping: D = Right (+1), A = Left (-1)
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -532,10 +698,22 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        animTime += 0.05;
 
-        // Movement Vectors (A/D & Joystick 100% Unmirrored)
+        // Movement Vectors
         const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
         const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
+
+        const isMoving = (Math.abs(rawX) > 0.05 || Math.abs(rawY) > 0.05);
+
+        // Procedural Leg Walk Animation
+        if (isMoving && leftLeg && rightLeg) {
+            leftLeg.rotation.x = Math.sin(animTime * 3) * 0.6;
+            rightLeg.rotation.x = -Math.sin(animTime * 3) * 0.6;
+        } else if (leftLeg && rightLeg) {
+            leftLeg.rotation.x = 0;
+            rightLeg.rotation.x = 0;
+        }
 
         const forwardX = Math.sin(cameraYaw);
         const forwardZ = Math.cos(cameraYaw);
@@ -563,10 +741,12 @@
         playerGroup.position.z = nextZ;
         playerGroup.rotation.y = cameraYaw;
 
-        // Dynamic Pitch Aiming & Camera Placement:
+        // Recoil Recovery
+        if (recoilOffset > 0) recoilOffset -= 0.05;
+
+        // Camera Positioning Logic
         const mode = cameraModes[currentCamModeIndex];
 
-        // Target point pitches up and down with cameraPitch!
         const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 20 * Math.cos(cameraPitch);
         const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 20 * Math.cos(cameraPitch);
         const targetY = playerGroup.position.y + 2.1 - Math.tan(cameraPitch) * 20;
@@ -577,16 +757,15 @@
 
             const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance;
             const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance;
-            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance;
+            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance + recoilOffset * 0.1;
 
             camera.position.set(camX, camY, camZ);
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
-            // First Person View: Camera at eye level (Y = 2.1)
             camera.position.set(
                 playerGroup.position.x,
-                playerGroup.position.y + 2.1,
+                playerGroup.position.y + 2.1 + recoilOffset * 0.1,
                 playerGroup.position.z
             );
             camera.lookAt(targetX, targetY, targetZ);
@@ -604,6 +783,18 @@
             if (tracerBeams[i].material.opacity <= 0) {
                 scene.remove(tracerBeams[i]);
                 tracerBeams.splice(i, 1);
+            }
+        }
+
+        // Animate Hit Spark Particles
+        for (let i = particleSparks.length - 1; i >= 0; i--) {
+            const p = particleSparks[i];
+            p.mesh.position.add(p.vel);
+            p.mesh.scale.multiplyScalar(0.9);
+            p.life -= 0.05;
+            if (p.life <= 0) {
+                scene.remove(p.mesh);
+                particleSparks.splice(i, 1);
             }
         }
 
@@ -663,17 +854,19 @@
     function fireWeapon(now) {
         lastFireTime = now;
         currentAmmo--;
+        recoilOffset = 0.2;
+        playSound('fire');
         updateHUD();
 
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-        // Spawn Glowing Bullet Tracer
+        // Muzzle Tracer Beam
         const startPos = gunMesh.getWorldPosition(new THREE.Vector3());
-        const endPos = startPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(50));
+        const endPos = startPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(60));
         
         const lineGeo = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9, linewidth: 2 });
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.95, linewidth: 3 });
         const tracer = new THREE.Line(lineGeo, lineMat);
         scene.add(tracer);
         tracerBeams.push(tracer);
@@ -684,9 +877,11 @@
 
         if (intersects.length > 0) {
             const hitObj = intersects[0].object;
+            spawnHitSparks(intersects[0].point);
 
             if (hitObj.userData.type === 'Rock') {
                 spawnDamageText(0, 'Block', intersects[0].point);
+                playSound('hit');
                 return;
             }
 
@@ -694,6 +889,9 @@
             let mult = 1.0;
             if (hitType === 'Head') mult = 2.5;
             if (hitType === 'Armor') mult = 0.5;
+
+            if (hitType === 'Head') playSound('crit');
+            else playSound('hit');
 
             const finalDamage = effectiveStats.damage * mult * overdriveBuff;
             bossCurrentHP = Math.max(0, bossCurrentHP - finalDamage);
@@ -715,6 +913,23 @@
             }
 
             if (bossCurrentHP <= 0) levelCleared();
+        }
+    }
+
+    function spawnHitSparks(pos) {
+        const sparkGeo = new THREE.SphereGeometry(0.1, 8, 8);
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+        for (let i = 0; i < 6; i++) {
+            const spark = new THREE.Mesh(sparkGeo, sparkMat);
+            spark.position.copy(pos);
+            scene.add(spark);
+
+            const vel = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.4,
+                Math.random() * 0.4,
+                (Math.random() - 0.5) * 0.4
+            );
+            particleSparks.push({ mesh: spark, vel: vel, life: 1.0 });
         }
     }
 
@@ -797,7 +1012,7 @@
             tag.style.left = `${x}px`;
             tag.style.top = `${y - 40}px`;
             tag.style.display = 'block';
-            tag.innerText = `💥 TITAN BOSS (${Math.round(dist)}m)`;
+            tag.innerText = `💥 MECH TITAN (${Math.round(dist)}m)`;
         } else {
             tag.style.display = 'none';
         }
