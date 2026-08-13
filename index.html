@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - Infinite Map & Stone Cover Collisions</title>
+    <title>Free Fire 3D Boss Battle - AAA HD Graphics & Pitch Aim</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0b1120; font-family: 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
         /* HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Level & Player HP Container (Top Left) */
+        /* Level & Player HP Container */
         #player-stats-container { position: absolute; top: 15px; left: 20px; display: flex; flex-direction: column; gap: 6px; }
         #level-banner { color: #ffcc00; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
 
@@ -48,7 +48,7 @@
         #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 0 0 12px #000, 2px 2px 4px #000; }
         #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; }
 
-        /* Free Fire Action Buttons */
+        /* Action Buttons */
         .btn-action { position: absolute; width: 72px; height: 72px; background: rgba(20, 30, 48, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 15px rgba(0,170,255,0.4); text-transform: uppercase; }
         .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.92); }
         #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
@@ -175,10 +175,11 @@
 
 <script>
     let scene, camera, renderer;
-    let playerGroup, playerBody, gunMesh;
+    let playerGroup, playerBody, headMesh, gunMesh;
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
-    let rockObstacles = []; // Collidable Stone Objects & Cover
+    let rockObstacles = [];
+    let tracerBeams = [];
 
     // Camera Modes: TPV, FPV, CINEMATIC
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
@@ -186,7 +187,7 @@
 
     // Player State
     let playerMaxHP = 100, playerCurrentHP = 100;
-    let playerRadius = 0.6; // Player collision radius
+    let playerRadius = 0.6;
 
     // Game Progression
     let currentLevel = 1;
@@ -195,10 +196,10 @@
     let bossSpeed = 0.07;
     let isEnraged = false, isAttacking = false;
 
-    // Player Movement & Aiming Inputs
+    // Inputs
     let moveInput = { x: 0, y: 0 };
     let kbMoveInput = { x: 0, y: 0 };
-    let cameraYaw = 0, cameraPitch = 0.1;
+    let cameraYaw = 0, cameraPitch = 0;
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
@@ -224,42 +225,47 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Sky blue
-        
-        // 1. Infinite Distance Fog: Seamlessly blends infinite ground plane into horizon sky!
-        scene.fog = new THREE.FogExp2(0x87ceeb, 0.0035);
+        scene.background = new THREE.Color(0x38bdf8);
+        scene.fog = new THREE.FogExp2(0x38bdf8, 0.003);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        // AAA HD Graphic Renderer Configuration
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ultra Soft High Quality Shadows
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // AAA Cinematic HDR Tone Mapping
+        renderer.toneMappingExposure = 1.1;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        // High Quality Cinematic Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
-        sunLight.position.set(50, 100, 50);
+        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.5);
+        sunLight.position.set(60, 120, 60);
         sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.bias = -0.0001;
         scene.add(sunLight);
 
-        // 2. Infinite Ground Plane (2000m x 2000m extended battleground)
+        // Ground Terrain with PBR Shaders
         const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4fb04f, roughness: 0.85 });
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7, metalness: 0.05 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Endless Grid Terrain Lines extending into horizon
-        const infiniteGrid = new THREE.GridHelper(2000, 100, 0xffffff, 0x388e3c);
+        const infiniteGrid = new THREE.GridHelper(2000, 120, 0xffffff, 0x15803d);
         infiniteGrid.position.y = 0.02;
         scene.add(infiniteGrid);
 
-        // 3. Create Solid Cover Stones / Rocks with Physical Bounding Collisions
         createStoneCoverStructures();
-
         createPlayerHero();
         createBossTitan();
         faceBoss();
@@ -274,17 +280,17 @@
 
     function createStoneCoverStructures() {
         const rockPositions = [
-            [-12, 2.5, 5, 3.2],   // Left front stone (x, y, z, radius)
-            [12, 2.5, 5, 3.2],    // Right front stone
-            [-15, 3.0, -10, 3.8], // Left rear stone
-            [15, 3.0, -10, 3.8],  // Right rear stone
-            [0, 2.5, -20, 3.0],   // Spawn area cover stone
-            [-25, 4.0, 20, 4.5],  // Outskirt giant stone 1
-            [25, 4.0, 20, 4.5]    // Outskirt giant stone 2
+            [-12, 2.5, 5, 3.2],
+            [12, 2.5, 5, 3.2],
+            [-15, 3.0, -10, 3.8],
+            [15, 3.0, -10, 3.8],
+            [0, 2.5, -20, 3.0],
+            [-25, 4.0, 20, 4.5],
+            [25, 4.0, 20, 4.5]
         ];
 
         const rockGeo = new THREE.DodecahedronGeometry(1);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, metalness: 0.1 });
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, metalness: 0.2 });
 
         rockPositions.forEach(([x, y, z, r]) => {
             const rock = new THREE.Mesh(rockGeo, rockMat);
@@ -295,7 +301,6 @@
             rock.userData = { type: 'Rock', radius: r };
             scene.add(rock);
 
-            // Add to physical collision & bullet cover list
             rockObstacles.push({ mesh: rock, pos: new THREE.Vector3(x, 0, z), radius: r });
         });
     }
@@ -305,9 +310,9 @@
         playerGroup.position.set(0, 0, -10);
         scene.add(playerGroup);
 
-        // Player Torso (Blue Tactical Outfit)
+        // Player Torso (Glossy Tactical Metallic Outfit)
         const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
-        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8 });
+        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.4 });
         playerBody = new THREE.Mesh(torsoGeo, torsoMat);
         playerBody.position.y = 1.2;
         playerBody.castShadow = true;
@@ -315,16 +320,17 @@
 
         // Player Head
         const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
-        const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 2.1;
-        playerGroup.add(head);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 });
+        headMesh = new THREE.Mesh(headGeo, headMat);
+        headMesh.position.y = 2.1;
+        playerGroup.add(headMesh);
 
-        // Player Gun
-        const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.8);
-        const gunMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+        // Player Gun (Tactical High-Res Metallic Mesh)
+        const gunGeo = new THREE.BoxGeometry(0.18, 0.22, 0.95);
+        const gunMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.9 });
         gunMesh = new THREE.Mesh(gunGeo, gunMat);
-        gunMesh.position.set(0.4, 1.4, 0.4);
+        gunMesh.position.set(0.35, 1.5, 0.5); // Positioned nicely at chest/shoulder level
+        gunMesh.castShadow = true;
         playerGroup.add(gunMesh);
     }
 
@@ -333,9 +339,9 @@
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // Giant Boss Body
+        // Metallic Armor Boss Body
         const bodyGeo = new THREE.CylinderGeometry(2.5, 3.0, 7.0, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.5 });
         bossBody = new THREE.Mesh(bodyGeo, bodyMat);
         bossBody.position.y = 3.5;
         bossBody.castShadow = true;
@@ -343,9 +349,9 @@
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // Head Weakspot (2.5x CRIT Damage)
+        // Head Weakspot (Glowing High-Emissive Yellow Skull)
         const headGeo = new THREE.SphereGeometry(2.2, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xeab308, emissive: 0xca8a04, roughness: 0.2 });
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.5, roughness: 0.2 });
         bossHead = new THREE.Mesh(headGeo, headMat);
         bossHead.position.y = 8.5;
         bossHead.castShadow = true;
@@ -353,18 +359,18 @@
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
-        // Chest Armor Plate (0.5x Damage)
+        // Chest Armor Shield
         const armorGeo = new THREE.BoxGeometry(3.5, 3.5, 0.8);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.1 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
         bossArmor.position.set(0, 3.5, -3.2);
         bossArmor.userData = { type: 'Armor' };
         bossGroup.add(bossArmor);
         hitboxes.push(bossArmor);
 
-        // Telegraphed Attack Ring Indicator
+        // Attack Ring Indicator
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.6 });
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.65 });
         attackIndicator = new THREE.Mesh(ringGeo, ringMat);
         attackIndicator.position.y = 0.05;
         bossGroup.add(attackIndicator);
@@ -375,7 +381,7 @@
         const dx = bossGroup.position.x - playerGroup.position.x;
         const dz = bossGroup.position.z - playerGroup.position.z;
         cameraYaw = Math.atan2(dx, dz);
-        cameraPitch = 0.1;
+        cameraPitch = 0.0;
     }
 
     function toggleCameraView() {
@@ -383,7 +389,18 @@
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
 
-        playerGroup.children.forEach(c => c.visible = (mode !== 'FPV'));
+        // In FPV: Hide head & torso, but KEEP GUN VISIBLE in front of camera!
+        if (mode === 'FPV') {
+            playerBody.visible = false;
+            headMesh.visible = false;
+            gunMesh.visible = true;
+            gunMesh.position.set(0.2, 1.9, 0.6); // Position gun right in sight view
+        } else {
+            playerBody.visible = true;
+            headMesh.visible = true;
+            gunMesh.visible = true;
+            gunMesh.position.set(0.35, 1.5, 0.5);
+        }
     }
 
     function setupJoystick() {
@@ -456,7 +473,8 @@
         window.addEventListener('mousemove', e => {
             if (document.pointerLockElement === document.body) {
                 cameraYaw -= e.movementX * 0.0025;
-                cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + e.movementY * 0.0025));
+                // Pitch look up/down clamping
+                cameraPitch = Math.max(-0.6, Math.min(0.6, cameraPitch + e.movementY * 0.0025));
             }
         });
 
@@ -482,7 +500,7 @@
                     if (elem && elem.closest('.hud-element')) continue;
 
                     cameraYaw -= (t.clientX - lastTouchPos.x) * 0.004;
-                    cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + (t.clientY - lastTouchPos.y) * 0.004));
+                    cameraPitch = Math.max(-0.6, Math.min(0.6, cameraPitch + (t.clientY - lastTouchPos.y) * 0.004));
                     lastTouchPos = { x: t.clientX, y: t.clientY };
                 }
             }
@@ -505,6 +523,7 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
+        // Fixed WASD A & D Strafe Mapping: D = Right (+1), A = Left (-1)
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -514,7 +533,7 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Movement Vectors Math
+        // Movement Vectors (A/D & Joystick 100% Unmirrored)
         const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
         const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
 
@@ -527,16 +546,13 @@
         let deltaX = (rightX * rawX) + (forwardX * rawY);
         let deltaZ = (rightZ * rawX) + (forwardZ * rawY);
 
-        // Prospective New Player Position
         let nextX = playerGroup.position.x + deltaX * speed;
         let nextZ = playerGroup.position.z + deltaZ * speed;
 
-        // Physical Collision Detection against Cover Stones
         rockObstacles.forEach(rock => {
             const dist = Math.hypot(nextX - rock.pos.x, nextZ - rock.pos.z);
             const minDist = rock.radius + playerRadius;
             if (dist < minDist) {
-                // Block/Slide along obstacle normal!
                 const angle = Math.atan2(nextZ - rock.pos.z, nextX - rock.pos.x);
                 nextX = rock.pos.x + Math.cos(angle) * minDist;
                 nextZ = rock.pos.z + Math.sin(angle) * minDist;
@@ -547,32 +563,32 @@
         playerGroup.position.z = nextZ;
         playerGroup.rotation.y = cameraYaw;
 
-        // Camera Positioning Logic
+        // Dynamic Pitch Aiming & Camera Placement:
         const mode = cameraModes[currentCamModeIndex];
+
+        // Target point pitches up and down with cameraPitch!
+        const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 20 * Math.cos(cameraPitch);
+        const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 20 * Math.cos(cameraPitch);
+        const targetY = playerGroup.position.y + 2.1 - Math.tan(cameraPitch) * 20;
 
         if (mode === 'TPV') {
             const distance = isADS ? 2.2 : 3.8;
             const height = isADS ? 2.3 : 2.7;
 
-            const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance * Math.cos(cameraPitch);
-            const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance * Math.cos(cameraPitch);
+            const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance;
+            const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance;
             const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance;
 
             camera.position.set(camX, camY, camZ);
-            
-            const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 15;
-            const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 15;
-            camera.lookAt(targetX, playerGroup.position.y + 2.0, targetZ);
+            camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
+            // First Person View: Camera at eye level (Y = 2.1)
             camera.position.set(
                 playerGroup.position.x,
                 playerGroup.position.y + 2.1,
                 playerGroup.position.z
             );
-            const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 15;
-            const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 15;
-            const targetY = playerGroup.position.y + 2.1 - Math.sin(cameraPitch) * 15;
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'CINEMATIC') {
@@ -582,14 +598,23 @@
 
         checkAimLock();
 
-        // Combat Firing
+        // Animate Bullet Tracers
+        for (let i = tracerBeams.length - 1; i >= 0; i--) {
+            tracerBeams[i].material.opacity -= 0.1;
+            if (tracerBeams[i].material.opacity <= 0) {
+                scene.remove(tracerBeams[i]);
+                tracerBeams.splice(i, 1);
+            }
+        }
+
+        // Firing Combat
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // Boss AI Logic & Rock Collisions
+        // Boss AI Logic
         if (bossCurrentHP > 0) {
             const dist = playerGroup.position.distanceTo(bossGroup.position);
             bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
@@ -600,7 +625,6 @@
                     let bossNextX = bossGroup.position.x + bossDir.x * bossSpeed;
                     let bossNextZ = bossGroup.position.z + bossDir.z * bossSpeed;
 
-                    // Boss Obstacle Collision
                     rockObstacles.forEach(rock => {
                         const bDist = Math.hypot(bossNextX - rock.pos.x, bossNextZ - rock.pos.z);
                         if (bDist < rock.radius + 2.5) {
@@ -625,7 +649,7 @@
 
     function checkAimLock() {
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0.1), camera);
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
         const intersects = raycaster.intersectObjects(hitboxes);
 
         const crosshair = document.getElementById('crosshair-container');
@@ -642,9 +666,18 @@
         updateHUD();
 
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0.1), camera);
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+        // Spawn Glowing Bullet Tracer
+        const startPos = gunMesh.getWorldPosition(new THREE.Vector3());
+        const endPos = startPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(50));
         
-        // Raycast against both Boss hitboxes AND Rock Cover Meshes!
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9, linewidth: 2 });
+        const tracer = new THREE.Line(lineGeo, lineMat);
+        scene.add(tracer);
+        tracerBeams.push(tracer);
+
         const rockMeshes = rockObstacles.map(r => r.mesh);
         const allTargets = [...hitboxes, ...rockMeshes];
         const intersects = raycaster.intersectObjects(allTargets);
@@ -652,7 +685,6 @@
         if (intersects.length > 0) {
             const hitObj = intersects[0].object;
 
-            // If bullet hits a stone cover structure first, stone blocks bullet!
             if (hitObj.userData.type === 'Rock') {
                 spawnDamageText(0, 'Block', intersects[0].point);
                 return;
