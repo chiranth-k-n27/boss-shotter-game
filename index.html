@@ -3,74 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TITAN STRIKE AAA - Institutional 3D Boss Battle Engine</title>
+    <title>TITAN STRIKE AAA - Photorealistic Unreal-Grade Boss Shooter</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050811; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #030712; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
-        /* HUD Overlay */
+        /* Cinematic Post-Processing & HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Player Stats Box */
-        #player-stats-container { position: absolute; top: 20px; left: 25px; display: flex; flex-direction: column; gap: 8px; }
-        #level-banner { color: #ffb700; font-size: 26px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 15px rgba(255,183,0,0.8), 2px 2px 4px #000; }
+        /* Helmet Visor Curved Curved Framing Lines */
+        .visor-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 12px solid rgba(0, 240, 255, 0.08); border-radius: 40px; pointer-events: none; box-shadow: inset 0 0 50px rgba(0,240,255,0.1); }
 
-        /* AAA Metallic Player Health Bar */
-        #player-hp-box { width: 250px; background: rgba(10, 16, 30, 0.85); border: 2px solid #00f0ff; border-radius: 10px; padding: 8px; box-shadow: 0 0 15px rgba(0,240,255,0.4); backdrop-filter: blur(8px); }
-        #player-hp-label { color: #00f0ff; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        #player-hp-bar { width: 100%; height: 14px; background: #0b1329; border-radius: 5px; overflow: hidden; border: 1px solid #1e293b; }
-        #player-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #00f0ff); transition: width 0.15s ease-out; }
+        /* Holographic Diegetic HUD Containers */
+        #player-stats-container { position: absolute; top: 25px; left: 30px; display: flex; flex-direction: column; gap: 8px; backdrop-filter: blur(8px); background: rgba(5, 12, 24, 0.7); border: 1px solid rgba(0, 240, 255, 0.4); border-left: 4px solid #00f0ff; padding: 12px 18px; border-radius: 6px; box-shadow: 0 0 20px rgba(0,240,255,0.2); }
+        #level-banner { color: #ffb700; font-size: 24px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 12px rgba(255,183,0,0.8); }
 
-        #pc-controls-help { color: #94a3b8; font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.65); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #00f0ff; }
+        /* Holographic Health Bar */
+        #player-hp-box { width: 240px; }
+        #player-hp-label { color: #00f0ff; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; display: flex; justify-content: space-between; text-shadow: 0 0 8px #00f0ff; }
+        #player-hp-bar { width: 100%; height: 12px; background: rgba(15, 23, 42, 0.8); border-radius: 3px; overflow: hidden; border: 1px solid rgba(0,240,255,0.3); }
+        #player-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #00f0ff); transition: width 0.15s ease-out; box-shadow: 0 0 10px #00f0ff; }
 
-        /* AAA Boss Health Bar Banner */
-        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 520px; background: rgba(12, 18, 32, 0.92); border: 2px solid #ff0055; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 0 25px rgba(255,0,85,0.5); backdrop-filter: blur(8px); }
-        #boss-title { color: #ff0055; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(255,0,85,0.8); }
-        #boss-hp-bar { width: 100%; height: 22px; background: #0f172a; border-radius: 7px; overflow: hidden; border: 1px solid #374151; margin-bottom: 4px; }
-        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff6600); transition: width 0.15s ease-out; }
-        #boss-hp-text { color: #ffffff; font-size: 14px; font-weight: 800; text-shadow: 1px 1px 3px #000; }
-        #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 4px; letter-spacing: 1px; }
+        #pc-controls-help { color: #94a3b8; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; border-left: 2px solid #00f0ff; }
+
+        /* Holographic Boss Health Bar */
+        #boss-hp-container { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 560px; background: rgba(15, 7, 18, 0.8); border: 1px solid rgba(255, 0, 85, 0.5); border-top: 3px solid #ff0055; border-radius: 8px; padding: 12px; text-align: center; box-shadow: 0 0 30px rgba(255,0,85,0.3); backdrop-filter: blur(10px); }
+        #boss-title { color: #ff0055; font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 6px; text-shadow: 0 0 14px rgba(255,0,85,0.9); }
+        #boss-hp-bar { width: 100%; height: 20px; background: rgba(20, 10, 25, 0.8); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,0,85,0.4); margin-bottom: 4px; }
+        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff6600); transition: width 0.15s ease-out; box-shadow: 0 0 12px #ff0055; }
+        #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 3px #000; letter-spacing: 1px; }
+        #boss-phase-badge { color: #ffcc00; font-size: 12px; font-weight: bold; margin-top: 4px; letter-spacing: 1px; }
 
         /* Virtual Touch Joystick Overlay */
-        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 135px; height: 135px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.35); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; backdrop-filter: blur(4px); }
-        #joystick-knob { width: 55px; height: 55px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 15px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 135px; height: 135px; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; backdrop-filter: blur(4px); box-shadow: 0 0 15px rgba(0,240,255,0.15); }
+        #joystick-knob { width: 55px; height: 55px; background: rgba(0, 240, 255, 0.8); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 15px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
 
-        /* AAA Dynamic Red Aim Lock Crosshair */
+        /* AAA Dynamic Aim Crosshair */
         #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; pointer-events: none; }
         #crosshair-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: #ffffff; border-radius: 50%; border: 2px solid #000; transition: background 0.1s, transform 0.1s; }
-        #crosshair-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; transition: border-color 0.1s, transform 0.1s; }
+        #crosshair-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(0,240,255,0.6); border-radius: 50%; transition: border-color 0.1s, transform 0.1s; }
         #crosshair-container.aim-locked #crosshair-dot { background: #ff0000; transform: translate(-50%, -50%) scale(1.5); box-shadow: 0 0 12px #ff0000; }
         #crosshair-container.aim-locked #crosshair-ring { border-color: #ff0000; transform: scale(1.15); box-shadow: 0 0 20px rgba(255,0,0,0.9); }
 
         /* Ammo Display */
-        #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 38px; font-weight: 900; text-shadow: 0 0 15px #000, 2px 2px 4px #000; }
-        #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; letter-spacing: 1px; }
+        #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 38px; font-weight: 900; text-shadow: 0 0 15px #00f0ff, 2px 2px 4px #000; letter-spacing: 2px; }
+        #ammo-label { font-size: 13px; color: #ffcc00; text-transform: uppercase; letter-spacing: 2px; }
 
         /* Action Buttons */
-        .btn-action { position: absolute; width: 75px; height: 75px; background: rgba(15, 23, 42, 0.88); border: 2px solid #00f0ff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 18px rgba(0,240,255,0.4); text-transform: uppercase; backdrop-filter: blur(6px); }
+        .btn-action { position: absolute; width: 75px; height: 75px; background: rgba(5, 15, 30, 0.85); border: 1px solid rgba(0, 240, 255, 0.5); border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 18px rgba(0,240,255,0.3); text-transform: uppercase; backdrop-filter: blur(6px); }
         .btn-action:active { background: rgba(0, 240, 255, 0.9); transform: scale(0.92); }
-        #btn-fire { bottom: 45px; right: 135px; width: 95px; height: 95px; background: rgba(225, 29, 72, 0.92); border-color: #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.7); font-size: 17px; }
-        #btn-ads { bottom: 155px; right: 35px; background: rgba(2, 132, 199, 0.88); }
+        #btn-fire { bottom: 45px; right: 135px; width: 95px; height: 95px; background: rgba(225, 29, 72, 0.9); border-color: #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.7); font-size: 17px; }
+        #btn-ads { bottom: 155px; right: 35px; background: rgba(2, 132, 199, 0.85); }
         #btn-reload { bottom: 155px; right: 125px; }
-        #btn-cam-toggle { top: 135px; left: 25px; width: auto; height: 40px; padding: 0 18px; border-radius: 20px; font-size: 12px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
-        #btn-lockon { bottom: 240px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(245, 158, 11, 0.9); border-color: #fbbf24; }
-        #btn-craft { bottom: 45px; left: 200px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(14, 165, 233, 0.9); border-color: #38bdf8; font-size: 14px; }
+        #btn-cam-toggle { top: 145px; left: 30px; width: auto; height: 40px; padding: 0 18px; border-radius: 20px; font-size: 12px; background: rgba(147, 51, 234, 0.85); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
+        #btn-lockon { bottom: 240px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(245, 158, 11, 0.85); border-color: #fbbf24; }
+        #btn-craft { bottom: 45px; left: 200px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(14, 165, 233, 0.85); border-color: #38bdf8; font-size: 14px; }
 
-        /* Damage Popups */
+        /* Floating Damage Text Container */
         #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .floating-damage { position: absolute; font-weight: 900; font-size: 34px; text-shadow: 0 0 10px #000, 2px 2px 5px #000; animation: floatUp 0.75s ease-out forwards; }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-35px) scale(1.35); } 100% { opacity: 0; transform: translateY(-70px) scale(1); } }
 
         /* Overhead Boss Tag */
-        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(225,0,85,0.92); padding: 5px 14px; border-radius: 12px; border: 2px solid #ffffff; box-shadow: 0 0 20px rgba(255,0,85,0.8); }
+        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(225,0,85,0.9); padding: 5px 14px; border-radius: 12px; border: 1px solid #ffffff; box-shadow: 0 0 20px rgba(255,0,85,0.8); }
 
         /* Challenge Widget */
-        #challenge-widget { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px 22px; color: #fff; font-size: 14px; display: none; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
+        #challenge-widget { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); border: 1px solid #00f0ff; border-radius: 8px; padding: 8px 22px; color: #fff; font-size: 14px; display: none; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
 
         /* Crafting Bench Modal */
-        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 800px; height: 82%; max-height: 540px; background: rgba(10, 15, 28, 0.96); border: 2px solid #00f0ff; border-radius: 14px; z-index: 100; display: none; padding: 24px; box-shadow: 0 0 40px rgba(0,240,255,0.45); color: #fff; backdrop-filter: blur(10px); }
+        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 800px; height: 82%; max-height: 540px; background: rgba(8, 14, 26, 0.96); border: 1px solid #00f0ff; border-radius: 14px; z-index: 100; display: none; padding: 24px; box-shadow: 0 0 40px rgba(0,240,255,0.45); color: #fff; backdrop-filter: blur(12px); }
         .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 16px; }
         .crafting-body { display: flex; height: calc(100% - 120px); gap: 20px; }
         .attachment-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
@@ -89,26 +92,28 @@
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
-    <div id="boss-tag">💥 MECH TITAN BOSS</div>
+    <div id="boss-tag">💥 TITAN MECH WARRIOR</div>
 
     <div id="hud-container">
+        <div class="visor-frame"></div>
+
         <div id="player-stats-container">
             <div id="level-banner">LEVEL 1</div>
             <div id="player-hp-box">
                 <div id="player-hp-label">
-                    <span>HERO HEALTH</span>
-                    <span id="player-hp-val">100 / 100</span>
+                    <span>PILOT INTEGRITY</span>
+                    <span id="player-hp-val">40 / 100</span>
                 </div>
-                <div id="player-hp-bar"><div id="player-hp-fill"></div></div>
+                <div id="player-hp-bar"><div id="player-hp-fill" style="width: 40%;"></div></div>
             </div>
             <div id="pc-controls-help">💻 PC: WASD Move | Click Screen to Lock Mouse Aim | R Reload | V Camera</div>
         </div>
 
         <div id="boss-hp-container">
             <div id="boss-title">👹 TITAN MECH WARRIOR</div>
-            <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
-            <div id="boss-hp-text">1000 / 1000 HP</div>
-            <div id="boss-phase-badge">PHASE 1: PATROL & APPROACH</div>
+            <div id="boss-hp-bar"><div id="boss-hp-fill" style="width: 68.7%;"></div></div>
+            <div id="boss-hp-text">2545 / 3700 HP</div>
+            <div id="boss-phase-badge">PHASE 1: ENEMY DETECTED</div>
         </div>
 
         <div id="btn-cam-toggle" class="hud-element btn-action">📷 VIEW: TPV</div>
@@ -128,7 +133,7 @@
         </div>
 
         <div id="ammo-display">
-            <div id="ammo-label">AMMO</div>
+            <div id="ammo-label">PLASMA MAG</div>
             <span id="ammo-val">30 / 30</span>
         </div>
 
@@ -174,34 +179,36 @@
     </div>
 
 <script>
-    // AAA WebGL Engine Core
+    // AAA WebGL Engine Core & Shaders
     let scene, camera, renderer;
     let playerGroup, playerBody, headMesh, gunMesh, leftLeg, rightLeg;
-    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftArm, bossRightArm, bossCoreLight;
+    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftArm, bossRightArm, bossCoreLight, bossCoreMesh, hydraulicPistons = [];
     let hitboxes = [];
     let rockObstacles = [];
     let tracerBeams = [];
     let particleSparks = [];
+    let emberParticles = [];
+    let spentCasings = [];
 
-    // Web Audio Synthesizer (Zero External Dependencies!)
+    // Web Audio Synthesizer
     let audioCtx = null;
 
-    // Procedural PBR Textures
-    let grassNormalMap, metalRoughnessMap, stoneNormalMap;
+    // PBR Textures
+    let wetAsphaltNormalMap, wetAsphaltRoughnessMap, metalScratchNormalMap, metalRustRoughnessMap, concreteBumpMap;
 
-    // Camera Modes: TPV, FPV, CINEMATIC
+    // Camera Modes
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
     let currentCamModeIndex = 0;
 
     // Player State
-    let playerMaxHP = 100, playerCurrentHP = 100;
+    let playerMaxHP = 100, playerCurrentHP = 40; // Initialized to 40/100 as requested
     let playerRadius = 0.6;
     let animTime = 0;
 
     // Game Progression
     let currentLevel = 1;
-    let baseBossHP = 1000;
-    let bossMaxHP = 1000, bossCurrentHP = 1000;
+    let baseBossHP = 3700;
+    let bossMaxHP = 3700, bossCurrentHP = 2545; // Initialized to 2545/3700 as requested
     let bossSpeed = 0.07;
     let isEnraged = false, isAttacking = false;
 
@@ -213,6 +220,7 @@
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
     let recoilOffset = 0;
+    let cameraShake = 0;
 
     // Challenge System
     let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
@@ -235,58 +243,74 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0e1726);
-        scene.fog = new THREE.FogExp2(0x0e1726, 0.003);
+        scene.background = new THREE.Color(0x030712); // Dark Cyberpunk Warzone Sky
+        scene.fog = new THREE.FogExp2(0x050c1e, 0.0035); // Dystopian Volumetric Fog
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
 
-        // AAA HD Graphic Renderer Configuration
+        // High-End WebGL Renderer Configuration
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ultra Soft Dynamic Shadows
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic HDR Tone Mapping
+        renderer.toneMappingExposure = 1.2;
         renderer.outputEncoding = THREE.sRGBEncoding;
 
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Generate Procedural Textures
-        generateProceduralTextures();
+        generatePhotorealisticPBRMaps();
 
-        // High Quality Lighting
-        const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.8);
+        // Photorealistic Dystopian Arena Lighting (Neon Lights + Sun + Fog Shafts)
+        const ambientLight = new THREE.AmbientLight(0x1e293b, 0.9);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffedd5, 1.6);
-        sunLight.position.set(70, 140, 70);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.bias = -0.0001;
-        scene.add(sunLight);
+        // Sunlight / Moon Shaft
+        const mainLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
+        mainLight.position.set(80, 150, 80);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        mainLight.shadow.bias = -0.0001;
+        scene.add(mainLight);
 
-        // Ground Terrain with PBR Shaders
+        // Dynamic Neon Pointlights (Cyberpunk Warzone Lighting)
+        const neonLight1 = new THREE.PointLight(0xff0055, 3.5, 40);
+        neonLight1.position.set(-15, 3, 10);
+        scene.add(neonLight1);
+
+        const neonLight2 = new THREE.PointLight(0x00f0ff, 3.5, 40);
+        neonLight2.position.set(15, 3, 10);
+        scene.add(neonLight2);
+
+        // Photorealistic Wet Asphalt Warzone Ground (PBR Reflection & Roughness)
         const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
         const groundMat = new THREE.MeshStandardMaterial({ 
-            color: 0x15803d, 
-            roughness: 0.8, 
-            metalness: 0.05,
-            bumpMap: grassNormalMap,
-            bumpScale: 0.15
+            color: 0x0f172a, 
+            roughness: 0.15, // Ultra reflective wet asphalt surface!
+            metalness: 0.8,
+            bumpMap: wetAsphaltNormalMap,
+            bumpScale: 0.25,
+            roughnessMap: wetAsphaltRoughnessMap
         });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        const infiniteGrid = new THREE.GridHelper(2000, 120, 0x00f0ff, 0x166534);
-        infiniteGrid.position.y = 0.02;
-        scene.add(infiniteGrid);
+        // Dystopian Grid Overlay
+        const warzoneGrid = new THREE.GridHelper(2000, 120, 0x00f0ff, 0x1e293b);
+        warzoneGrid.position.y = 0.02;
+        scene.add(warzoneGrid);
 
-        createStoneCoverStructures();
-        createPlayerHeroAAA();
-        createBossTitanAAA();
+        // Flying Atmospheric Embers
+        createAtmosphericEmbers();
+
+        // Crumbling Concrete Cover Structures
+        createCrumblingConcreteCover();
+
+        createPlayerHeroPhotorealistic();
+        createBossTitanMechWarrior();
         faceBoss();
 
         recalculateStats();
@@ -308,77 +332,107 @@
         const now = audioCtx.currentTime;
 
         if (type === 'fire') {
-            // AAA Gunfire Sound (Explosive Noise + Sub Bass)
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(300, now);
-            osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(35, now + 0.14);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start(now);
-            osc.stop(now + 0.12);
+            osc.stop(now + 0.14);
         }
         else if (type === 'hit') {
-            // Hit sound
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, now);
-            osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.frequency.setValueAtTime(850, now);
+            osc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start(now);
-            osc.stop(now + 0.08);
+            osc.stop(now + 0.09);
         }
         else if (type === 'crit') {
-            // Headshot Crit Sound (High Pitch Ding)
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(1400, now);
-            osc.frequency.exponentialRampToValueAtTime(900, now + 0.15);
-            gain.gain.setValueAtTime(0.35, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.frequency.setValueAtTime(1500, now);
+            osc.frequency.exponentialRampToValueAtTime(950, now + 0.16);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start(now);
-            osc.stop(now + 0.15);
+            osc.stop(now + 0.16);
         }
     }
 
-    function generateProceduralTextures() {
-        // Grass Normal Map Canvas
+    function generatePhotorealisticPBRMaps() {
+        // Wet Asphalt Normal Map
         const c1 = document.createElement('canvas');
-        c1.width = 256; c1.height = 256;
+        c1.width = 512; c1.height = 512;
         const ctx1 = c1.getContext('2d');
-        ctx1.fillStyle = '#808080'; ctx1.fillRect(0,0,256,256);
-        for(let i=0; i<3000; i++) {
-            ctx1.fillStyle = Math.random() > 0.5 ? '#909090' : '#707070';
-            ctx1.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+        ctx1.fillStyle = '#808080'; ctx1.fillRect(0,0,512,512);
+        for(let i=0; i<8000; i++) {
+            ctx1.fillStyle = Math.random() > 0.5 ? '#a0a0a0' : '#606060';
+            ctx1.fillRect(Math.random()*512, Math.random()*512, 3, 3);
         }
-        grassNormalMap = new THREE.CanvasTexture(c1);
-        grassNormalMap.wrapS = THREE.RepeatWrapping;
-        grassNormalMap.wrapT = THREE.RepeatWrapping;
-        grassNormalMap.repeat.set(40, 40);
+        wetAsphaltNormalMap = new THREE.CanvasTexture(c1);
+        wetAsphaltNormalMap.wrapS = THREE.RepeatWrapping;
+        wetAsphaltNormalMap.wrapT = THREE.RepeatWrapping;
+        wetAsphaltNormalMap.repeat.set(50, 50);
 
-        // Stone Texture Canvas
+        // Wet Asphalt Roughness Map
         const c2 = document.createElement('canvas');
-        c2.width = 256; c2.height = 256;
+        c2.width = 512; c2.height = 512;
         const ctx2 = c2.getContext('2d');
-        ctx2.fillStyle = '#808080'; ctx2.fillRect(0,0,256,256);
-        for(let i=0; i<500; i++) {
-            ctx2.fillStyle = '#a0a0a0';
-            ctx2.fillRect(Math.random()*256, Math.random()*256, 4, 4);
+        ctx2.fillStyle = '#303030'; ctx2.fillRect(0,0,512,512);
+        for(let i=0; i<100; i++) {
+            ctx2.fillStyle = '#101010'; // Water puddle spots
+            ctx2.beginPath();
+            ctx2.arc(Math.random()*512, Math.random()*512, Math.random()*40, 0, Math.PI*2);
+            ctx2.fill();
         }
-        stoneNormalMap = new THREE.CanvasTexture(c2);
+        wetAsphaltRoughnessMap = new THREE.CanvasTexture(c2);
+
+        // Metallic Scratch Normal Map
+        const c3 = document.createElement('canvas');
+        c3.width = 512; c3.height = 512;
+        const ctx3 = c3.getContext('2d');
+        ctx3.fillStyle = '#808080'; ctx3.fillRect(0,0,512,512);
+        for(let i=0; i<400; i++) {
+            ctx3.strokeStyle = '#c0c0c0';
+            ctx3.lineWidth = 1;
+            ctx3.beginPath();
+            ctx3.moveTo(Math.random()*512, Math.random()*512);
+            ctx3.lineTo(Math.random()*512, Math.random()*512);
+            ctx3.stroke();
+        }
+        metalScratchNormalMap = new THREE.CanvasTexture(c3);
     }
 
-    function createStoneCoverStructures() {
+    function createAtmosphericEmbers() {
+        const emberGeo = new THREE.BufferGeometry();
+        const count = 300;
+        const positions = new Float32Array(count * 3);
+        for(let i=0; i<count*3; i+=3) {
+            positions[i] = (Math.random() - 0.5) * 80;
+            positions[i+1] = Math.random() * 20;
+            positions[i+2] = (Math.random() - 0.5) * 80;
+        }
+        emberGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const emberMat = new THREE.PointsMaterial({ color: 0xff6600, size: 0.25, transparent: true, opacity: 0.8 });
+        const embers = new THREE.Points(emberGeo, emberMat);
+        scene.add(embers);
+        emberParticles = embers;
+    }
+
+    function createCrumblingConcreteCover() {
         const rockPositions = [
             [-12, 2.5, 5, 3.2],
             [12, 2.5, 5, 3.2],
@@ -389,65 +443,65 @@
             [25, 4.0, 20, 4.5]
         ];
 
-        const rockGeo = new THREE.DodecahedronGeometry(1, 1);
+        const rockGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
         const rockMat = new THREE.MeshStandardMaterial({ 
-            color: 0x475569, 
-            roughness: 0.85, 
-            metalness: 0.2,
-            bumpMap: stoneNormalMap,
-            bumpScale: 0.1
+            color: 0x334155, 
+            roughness: 0.9, 
+            metalness: 0.1,
+            bumpMap: metalScratchNormalMap,
+            bumpScale: 0.15
         });
 
         rockPositions.forEach(([x, y, z, r]) => {
+            const group = new THREE.Group();
+            group.position.set(x, y, z);
+
             const rock = new THREE.Mesh(rockGeo, rockMat);
-            rock.position.set(x, y, z);
-            rock.scale.set(r, r, r);
+            rock.scale.set(r*1.2, r*1.2, r*1.2);
             rock.castShadow = true;
             rock.receiveShadow = true;
             rock.userData = { type: 'Rock', radius: r };
-            scene.add(rock);
+            group.add(rock);
+            scene.add(group);
 
             rockObstacles.push({ mesh: rock, pos: new THREE.Vector3(x, 0, z), radius: r });
         });
     }
 
-    function createPlayerHeroAAA() {
+    function createPlayerHeroPhotorealistic() {
         playerGroup = new THREE.Group();
         playerGroup.position.set(0, 0, -10);
         scene.add(playerGroup);
 
-        // Detailed AAA Soldier Body
+        // Tactical Exo-Suit Soldier
         const torsoGeo = new THREE.BoxGeometry(0.85, 1.25, 0.55);
-        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.35, metalness: 0.5 });
+        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7, normalMap: metalScratchNormalMap });
         playerBody = new THREE.Mesh(torsoGeo, torsoMat);
         playerBody.position.y = 1.25;
         playerBody.castShadow = true;
         playerGroup.add(playerBody);
 
-        // Tactical Armor Chestplate
-        const armorGeo = new THREE.BoxGeometry(0.9, 0.7, 0.6);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
-        const armor = new THREE.Mesh(armorGeo, armorMat);
+        const chestArmorGeo = new THREE.BoxGeometry(0.9, 0.7, 0.6);
+        const chestArmorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.2 });
+        const armor = new THREE.Mesh(chestArmorGeo, chestArmorMat);
         armor.position.set(0, 1.4, 0);
         playerGroup.add(armor);
 
-        // Tactical Helmet Head
         const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
+        const headMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.8 });
         headMesh = new THREE.Mesh(headGeo, headMat);
         headMesh.position.y = 2.15;
         playerGroup.add(headMesh);
 
-        // Glowing Visor
+        // Holographic Visor
         const visorGeo = new THREE.BoxGeometry(0.4, 0.12, 0.2);
-        const visorMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.8 });
+        const visorMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 1.2 });
         const visor = new THREE.Mesh(visorGeo, visorMat);
         visor.position.set(0, 2.18, 0.25);
         playerGroup.add(visor);
 
-        // Animated Legs
         const legGeo = new THREE.BoxGeometry(0.35, 0.9, 0.4);
-        const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
         leftLeg = new THREE.Mesh(legGeo, legMat);
         leftLeg.position.set(-0.25, 0.45, 0);
         playerGroup.add(leftLeg);
@@ -456,15 +510,14 @@
         rightLeg.position.set(0.25, 0.45, 0);
         playerGroup.add(rightLeg);
 
-        // AAA Detailed Assault Rifle
+        // High-Tech Gun Mesh
         const gunGroup = new THREE.Group();
-        
-        const bodyGun = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.95), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.9 }));
-        const scopeGun = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.5 }));
+        const bodyGun = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.95), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.9 }));
+        const scopeGun = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.8 }));
         scopeGun.rotation.x = Math.PI / 2;
         scopeGun.position.set(0, 0.15, 0);
 
-        const barrelGun = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.95 }));
+        const barrelGun = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95 }));
         barrelGun.rotation.x = Math.PI / 2;
         barrelGun.position.set(0, 0, 0.6);
 
@@ -477,14 +530,19 @@
         playerGroup.add(gunMesh);
     }
 
-    function createBossTitanAAA() {
+    function createBossTitanMechWarrior() {
         bossGroup = new THREE.Group();
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // Heavy Armored Mech Titan Body
+        // 1. Weathered, Battle-Damaged Metallic Mech Body
         const bodyGeo = new THREE.CylinderGeometry(2.6, 3.2, 7.5, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35, metalness: 0.6 });
+        const bodyMat = new THREE.MeshStandardMaterial({ 
+            color: 0x475569, 
+            roughness: 0.4, 
+            metalness: 0.85,
+            normalMap: metalScratchNormalMap
+        });
         bossBody = new THREE.Mesh(bodyGeo, bodyMat);
         bossBody.position.y = 3.75;
         bossBody.castShadow = true;
@@ -492,26 +550,34 @@
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // Glowing Titan Core Light
-        const coreGeo = new THREE.SphereGeometry(1.2, 16, 16);
-        const coreMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.9 });
-        const core = new THREE.Mesh(coreGeo, coreMat);
-        core.position.set(0, 4.0, 2.0);
-        bossGroup.add(core);
+        // 2. Glowing Core Reactor with Heat Distortion FX
+        const coreGeo = new THREE.SphereGeometry(1.3, 24, 24);
+        const coreMat = new THREE.MeshStandardMaterial({ 
+            color: 0xff0055, 
+            emissive: 0xff0055, 
+            emissiveIntensity: 1.5,
+            roughness: 0.1
+        });
+        bossCoreMesh = new THREE.Mesh(coreGeo, coreMat);
+        bossCoreMesh.position.set(0, 4.2, 2.0);
+        bossGroup.add(bossCoreMesh);
 
-        // Head Weakspot (Glowing Yellow Mech Skull)
-        const headGeo = new THREE.SphereGeometry(2.3, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.6, roughness: 0.2 });
-        bossHead = new THREE.Mesh(headGeo, headMat);
-        bossHead.position.y = 8.8;
-        bossHead.castShadow = true;
-        bossHead.userData = { type: 'Head' };
-        bossGroup.add(bossHead);
-        hitboxes.push(bossHead);
+        bossCoreLight = new THREE.PointLight(0xff0055, 4.0, 20);
+        bossCoreLight.position.set(0, 4.2, 2.2);
+        bossGroup.add(bossCoreLight);
 
-        // Mech Shoulder Cannons & Arms
+        // 3. Exposed Wiring & Mechanical Joints
+        for (let i = -1; i <= 1; i += 2) {
+            const wireGeo = new THREE.TorusGeometry(1.2, 0.08, 8, 24);
+            const wireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+            const wire = new THREE.Mesh(wireGeo, wireMat);
+            wire.position.set(i * 1.8, 3.5, 0);
+            bossGroup.add(wire);
+        }
+
+        // 4. Dynamic Hydraulics & Mech Arms
         const armGeo = new THREE.CylinderGeometry(0.8, 0.8, 5.0, 12);
-        const armMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+        const armMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
         
         bossLeftArm = new THREE.Mesh(armGeo, armMat);
         bossLeftArm.position.set(-3.6, 4.5, 0);
@@ -521,9 +587,33 @@
         bossRightArm.position.set(3.6, 4.5, 0);
         bossGroup.add(bossRightArm);
 
-        // Chest Armor Shield
+        // Hydraulic Piston Cylinders
+        const pistonGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.5, 8);
+        const pistonMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+        
+        const p1 = new THREE.Mesh(pistonGeo, pistonMat);
+        p1.position.set(-3.6, 3.0, 0.5);
+        bossGroup.add(p1);
+        hydraulicPistons.push(p1);
+
+        const p2 = new THREE.Mesh(pistonGeo, pistonMat);
+        p2.position.set(3.6, 3.0, 0.5);
+        bossGroup.add(p2);
+        hydraulicPistons.push(p2);
+
+        // 5. Head Weakspot Skull
+        const headGeo = new THREE.SphereGeometry(2.3, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.8, roughness: 0.2 });
+        bossHead = new THREE.Mesh(headGeo, headMat);
+        bossHead.position.y = 8.8;
+        bossHead.castShadow = true;
+        bossHead.userData = { type: 'Head' };
+        bossGroup.add(bossHead);
+        hitboxes.push(bossHead);
+
+        // 6. Chest Armor Plate
         const armorGeo = new THREE.BoxGeometry(3.6, 3.6, 0.85);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.95, roughness: 0.1 });
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95, roughness: 0.1 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
         bossArmor.position.set(0, 3.75, -3.4);
         bossArmor.userData = { type: 'Armor' };
@@ -689,7 +779,7 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // WASD Strafe Mapping: D = Right (+1), A = Left (-1)
+        // WASD Inputs: D = Right, A = Left
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -700,13 +790,45 @@
         requestAnimationFrame(animate);
         animTime += 0.05;
 
-        // Movement Vectors
+        // Core Pulse Heat Distortion Simulation
+        if (bossCoreMesh) {
+            bossCoreMesh.material.emissiveIntensity = 1.0 + Math.sin(animTime * 4) * 0.5;
+        }
+
+        // Hydraulic Piston Motion Simulation
+        hydraulicPistons.forEach((p, idx) => {
+            p.position.y = 3.0 + Math.sin(animTime * 2 + idx) * 0.2;
+        });
+
+        // Embers Rising Motion
+        if (emberParticles) {
+            const pos = emberParticles.geometry.attributes.position.array;
+            for(let i=1; i<pos.length; i+=3) {
+                pos[i] += 0.08;
+                if(pos[i] > 20) pos[i] = 0;
+            }
+            emberParticles.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Spent Bullet Casings Physics Simulation
+        for (let i = spentCasings.length - 1; i >= 0; i--) {
+            const c = spentCasings[i];
+            c.mesh.position.add(c.vel);
+            c.vel.y -= 0.015; // Gravity
+            c.mesh.rotation.x += 0.2;
+            c.mesh.rotation.y += 0.2;
+            c.life -= 0.03;
+            if (c.life <= 0 || c.mesh.position.y <= 0.1) {
+                scene.remove(c.mesh);
+                spentCasings.splice(i, 1);
+            }
+        }
+
+        // Movement
         const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
         const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
-
         const isMoving = (Math.abs(rawX) > 0.05 || Math.abs(rawY) > 0.05);
 
-        // Procedural Leg Walk Animation
         if (isMoving && leftLeg && rightLeg) {
             leftLeg.rotation.x = Math.sin(animTime * 3) * 0.6;
             rightLeg.rotation.x = -Math.sin(animTime * 3) * 0.6;
@@ -741,31 +863,34 @@
         playerGroup.position.z = nextZ;
         playerGroup.rotation.y = cameraYaw;
 
-        // Recoil Recovery
         if (recoilOffset > 0) recoilOffset -= 0.05;
+        if (cameraShake > 0) cameraShake -= 0.05;
 
-        // Camera Positioning Logic
+        // Camera Positioning & Camera Shake
         const mode = cameraModes[currentCamModeIndex];
 
         const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 20 * Math.cos(cameraPitch);
         const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 20 * Math.cos(cameraPitch);
         const targetY = playerGroup.position.y + 2.1 - Math.tan(cameraPitch) * 20;
 
+        const shakeX = (Math.random() - 0.5) * cameraShake;
+        const shakeY = (Math.random() - 0.5) * cameraShake;
+
         if (mode === 'TPV') {
             const distance = isADS ? 2.2 : 3.8;
             const height = isADS ? 2.3 : 2.7;
 
-            const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance;
+            const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance + shakeX;
             const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance;
-            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance + recoilOffset * 0.1;
+            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance + recoilOffset * 0.1 + shakeY;
 
             camera.position.set(camX, camY, camZ);
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
             camera.position.set(
-                playerGroup.position.x,
-                playerGroup.position.y + 2.1 + recoilOffset * 0.1,
+                playerGroup.position.x + shakeX,
+                playerGroup.position.y + 2.1 + recoilOffset * 0.1 + shakeY,
                 playerGroup.position.z
             );
             camera.lookAt(targetX, targetY, targetZ);
@@ -854,14 +979,15 @@
     function fireWeapon(now) {
         lastFireTime = now;
         currentAmmo--;
-        recoilOffset = 0.2;
+        recoilOffset = 0.25;
+        cameraShake = 0.3;
         playSound('fire');
         updateHUD();
 
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-        // Muzzle Tracer Beam
+        // Muzzle Flash Beam
         const startPos = gunMesh.getWorldPosition(new THREE.Vector3());
         const endPos = startPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(60));
         
@@ -870,6 +996,9 @@
         const tracer = new THREE.Line(lineGeo, lineMat);
         scene.add(tracer);
         tracerBeams.push(tracer);
+
+        // Eject Spent Brass Casing FX
+        ejectBrassCasing(startPos);
 
         const rockMeshes = rockObstacles.map(r => r.mesh);
         const allTargets = [...hitboxes, ...rockMeshes];
@@ -916,18 +1045,33 @@
         }
     }
 
+    function ejectBrassCasing(pos) {
+        const casingGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.1, 8);
+        const casingMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.1 });
+        const casing = new THREE.Mesh(casingGeo, casingMat);
+        casing.position.copy(pos);
+        scene.add(casing);
+
+        const vel = new THREE.Vector3(
+            (Math.random() * 0.2 + 0.1),
+            (Math.random() * 0.1 + 0.1),
+            (Math.random() * 0.2 - 0.1)
+        );
+        spentCasings.push({ mesh: casing, vel: vel, life: 1.0 });
+    }
+
     function spawnHitSparks(pos) {
-        const sparkGeo = new THREE.SphereGeometry(0.1, 8, 8);
-        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-        for (let i = 0; i < 6; i++) {
+        const sparkGeo = new THREE.SphereGeometry(0.12, 8, 8);
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        for (let i = 0; i < 8; i++) {
             const spark = new THREE.Mesh(sparkGeo, sparkMat);
             spark.position.copy(pos);
             scene.add(spark);
 
             const vel = new THREE.Vector3(
-                (Math.random() - 0.5) * 0.4,
-                Math.random() * 0.4,
-                (Math.random() - 0.5) * 0.4
+                (Math.random() - 0.5) * 0.5,
+                Math.random() * 0.5,
+                (Math.random() - 0.5) * 0.5
             );
             particleSparks.push({ mesh: spark, vel: vel, life: 1.0 });
         }
@@ -957,6 +1101,7 @@
 
     function damagePlayer(dmg) {
         playerCurrentHP = Math.max(0, playerCurrentHP - dmg);
+        cameraShake = 0.8;
         updateHUD();
 
         if (playerCurrentHP <= 0) {
@@ -1012,7 +1157,7 @@
             tag.style.left = `${x}px`;
             tag.style.top = `${y - 40}px`;
             tag.style.display = 'block';
-            tag.innerText = `💥 MECH TITAN (${Math.round(dist)}m)`;
+            tag.innerText = `💥 TITAN MECH (${Math.round(dist)}m)`;
         } else {
             tag.style.display = 'none';
         }
@@ -1084,7 +1229,7 @@
         bossSpeed += 0.01;
         isEnraged = false;
         bossGroup.position.set(0, 0, 20);
-        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: PATROL & APPROACH';
+        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: ENEMY DETECTED';
         faceBoss();
         updateHUD();
     }
