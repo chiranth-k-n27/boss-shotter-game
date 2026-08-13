@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - Modular Weapon Crafting</title>
+    <title>Free Fire 3D Boss Battle - Multi-Camera & Touch Joystick</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -24,6 +24,10 @@
         #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; }
         #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 2px; }
 
+        /* Virtual Touch Joystick Overlay (Left Side Mobile) */
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; }
+        #joystick-knob { width: 50px; height: 50px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px #00c8ff; transform: translate(0px, 0px); transition: transform 0.05s ease-out; }
+
         /* Free Fire Dynamic Red Aim-Assist Crosshair */
         #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; pointer-events: none; }
         #crosshair-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: #ffffff; border-radius: 50%; border: 2px solid #000; transition: background 0.1s, transform 0.1s; }
@@ -41,8 +45,9 @@
         #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
         #btn-ads { bottom: 145px; right: 35px; background: rgba(0, 150, 255, 0.85); }
         #btn-reload { bottom: 145px; right: 120px; }
+        #btn-cam-toggle { top: 80px; left: 20px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 13px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
         #btn-lockon { bottom: 225px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(255, 165, 0, 0.9); border-color: #ffaa00; }
-        #btn-craft { bottom: 45px; left: 35px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
+        #btn-craft { bottom: 45px; left: 190px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
 
         /* Damage Popups */
         #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -87,9 +92,16 @@
             <div id="boss-phase-badge">PHASE 1: PATROL & APPROACH</div>
         </div>
 
+        <div id="btn-cam-toggle" class="hud-element btn-action">📷 VIEW: TPV</div>
+
         <div id="challenge-widget">
             <span id="challenge-title">CHALLENGE: Land 3 Headshots!</span>
             <div id="challenge-progress" style="font-weight: bold; margin-top: 2px;">0 / 3</div>
+        </div>
+
+        <!-- Touch Joystick Element for Mobile Movement -->
+        <div id="joystick-container" class="hud-element">
+            <div id="joystick-knob"></div>
         </div>
 
         <!-- Free Fire Red Aim Lock Crosshair -->
@@ -135,7 +147,6 @@
                     <div class="stat-label"><span>BULLET VELOCITY</span><span id="val-vel">100m/s</span></div>
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-vel"></div></div>
                 </div>
-                .
                 <div class="stat-row">
                     <div class="stat-label"><span>AMMO CAPACITY</span><span id="val-cap">30</span></div>
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-cap"></div></div>
@@ -152,6 +163,10 @@
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
 
+    // Camera View Modes: TPV (Third-Person), FPV (First-Person), SPV (Second-Person/Boss Eye View)
+    const cameraModes = ['TPV', 'FPV', 'SPV'];
+    let currentCamModeIndex = 0; // Starts at TPV
+
     // Game Progression
     let currentLevel = 1;
     let baseBossHP = 1000;
@@ -165,7 +180,6 @@
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
-    let isAimLocked = false;
 
     // Challenge System
     let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
@@ -188,7 +202,7 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Bright Sunny Skybox!
+        scene.background = new THREE.Color(0x87ceeb); // Sunny Blue Sky
         scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -198,7 +212,7 @@
         renderer.shadowMap.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Sunlight Lighting (Bright & Vivid)
+        // Sunlight Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
 
@@ -207,7 +221,7 @@
         sunLight.castShadow = true;
         scene.add(sunLight);
 
-        // Free Fire Battleground Terrain (Green Grass Field)
+        // Ground Terrain
         const groundGeo = new THREE.PlaneGeometry(150, 150);
         const groundMat = new THREE.MeshStandardMaterial({ color: 0x4fb04f, roughness: 0.8 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -215,7 +229,7 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Cover Rocks & Obstacles
+        // Cover Rocks
         const rockGeo = new THREE.DodecahedronGeometry(3);
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.9 });
         [ [-12, 2.5, 5], [12, 2.5, 5], [-10, 2.5, -12], [10, 2.5, -12] ].forEach(pos => {
@@ -225,7 +239,7 @@
             scene.add(rock);
         });
 
-        // 1. Create Player Hero Avatar (Third Person View!)
+        // 1. Create Player Hero Avatar
         createPlayerHero();
 
         // 2. Create Giant Boss Monster Titan
@@ -236,6 +250,7 @@
 
         recalculateStats();
         setupInputHandlers();
+        setupTouchJoystick();
         setupCraftingUI();
 
         setInterval(startRandomChallenge, 30000);
@@ -271,10 +286,10 @@
 
     function createBossTitan() {
         bossGroup = new THREE.Group();
-        bossGroup.position.set(0, 0, 15); // 25 meters in front of player
+        bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // Giant Boss Body (Crimson / Magenta Monster Titan)
+        // Giant Boss Body
         const bodyGeo = new THREE.CylinderGeometry(2.5, 3.0, 7.0, 16);
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
         bossBody = new THREE.Mesh(bodyGeo, bodyMat);
@@ -284,7 +299,7 @@
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // Head Weakspot (Glowing Bright Yellow Skull - 2.5x Damage)
+        // Head Weakspot (2.5x CRIT Damage)
         const headGeo = new THREE.SphereGeometry(2.2, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({ color: 0xeab308, emissive: 0xca8a04, roughness: 0.2 });
         bossHead = new THREE.Mesh(headGeo, headMat);
@@ -294,7 +309,7 @@
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
-        // Chest Armor Plate (Dark Metal Shield - 0.5x Damage)
+        // Chest Armor Plate (0.5x Damage)
         const armorGeo = new THREE.BoxGeometry(3.5, 3.5, 0.8);
         const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
@@ -319,11 +334,63 @@
         cameraPitch = 0.15;
     }
 
+    function toggleCameraView() {
+        currentCamModeIndex = (currentCamModeIndex + 1) % cameraModes.length;
+        const mode = cameraModes[currentCamModeIndex];
+        document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
+
+        // Toggle player body visibility for FPV
+        playerBody.visible = (mode !== 'FPV');
+    }
+
+    function setupTouchJoystick() {
+        const container = document.getElementById('joystick-container');
+        const knob = document.getElementById('joystick-knob');
+        let touchId = null;
+        let center = { x: 0, y: 0 };
+
+        container.addEventListener('touchstart', e => {
+            const t = e.touches[0];
+            touchId = t.identifier;
+            const rect = container.getBoundingClientRect();
+            center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
+
+        container.addEventListener('touchmove', e => {
+            for (let t of e.touches) {
+                if (t.identifier === touchId) {
+                    const dx = t.clientX - center.x;
+                    const dy = t.clientY - center.y;
+                    const dist = Math.min(45, Math.hypot(dx, dy));
+                    const angle = Math.atan2(dy, dx);
+
+                    const knobX = Math.cos(angle) * dist;
+                    const knobY = Math.sin(angle) * dist;
+                    knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+                    moveInput.x = knobX / 45;
+                    moveInput.y = -knobY / 45;
+                }
+            }
+        });
+
+        const resetJoystick = () => {
+            touchId = null;
+            knob.style.transform = `translate(0px, 0px)`;
+            moveInput.x = 0;
+            moveInput.y = 0;
+        };
+
+        container.addEventListener('touchend', resetJoystick);
+        container.addEventListener('touchcancel', resetJoystick);
+    }
+
     function setupInputHandlers() {
         const keys = {};
         window.addEventListener('keydown', e => {
             keys[e.code] = true;
             if (e.code === 'KeyR') reloadWeapon();
+            if (e.code === 'KeyV') toggleCameraView();
         });
         window.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -340,7 +407,7 @@
         });
         window.addEventListener('mouseup', e => { if (e.button === 0) isFiring = false; });
 
-        // Touch Look Controls
+        // Touch Look Controls (Right Side Drag)
         let lastTouchPos = { x: 0, y: 0 };
         window.addEventListener('touchstart', e => {
             for (let t of e.touches) {
@@ -364,6 +431,7 @@
         document.getElementById('btn-fire').addEventListener('touchend', () => isFiring = false);
         document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
         document.getElementById('btn-reload').addEventListener('click', reloadWeapon);
+        document.getElementById('btn-cam-toggle').addEventListener('click', toggleCameraView);
         document.getElementById('btn-lockon').addEventListener('click', faceBoss);
         document.getElementById('btn-craft').addEventListener('click', () => {
             document.getElementById('crafting-panel').style.display = 'block';
@@ -372,37 +440,64 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
+        // Keyboard WASD Movement Update Loop
         setInterval(() => {
-            moveInput.x = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
-            moveInput.y = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+            if (moveInput.x === 0 && moveInput.y === 0) {
+                moveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+                moveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+            }
         }, 16);
     }
 
     function animate() {
         requestAnimationFrame(animate);
 
-        // 1. Movement Logic
-        const speed = 0.16;
+        // 1. Responsive Player Movement Logic
+        const speed = 0.18;
         playerGroup.rotation.y = cameraYaw;
         playerGroup.translateX(moveInput.x * speed);
         playerGroup.translateZ(-moveInput.y * speed);
 
-        // 2. Third-Person Camera Follow Setup (Positioned behind Player)
-        const camDistance = isADS ? 2.5 : 7.0;
-        const camHeight = isADS ? 1.8 : 3.5;
-        
-        const offsetX = Math.sin(cameraYaw) * camDistance * Math.cos(cameraPitch);
-        const offsetZ = Math.cos(cameraYaw) * camDistance * Math.cos(cameraPitch);
-        const offsetY = Math.sin(cameraPitch) * camDistance + camHeight;
+        // 2. Multi-Camera Modes: TPV, FPV, SPV
+        const mode = cameraModes[currentCamModeIndex];
 
-        camera.position.set(
-            playerGroup.position.x - offsetX,
-            playerGroup.position.y + offsetY,
-            playerGroup.position.z - offsetZ
-        );
-        camera.lookAt(playerGroup.position.x, playerGroup.position.y + 2.0, playerGroup.position.z + 10);
+        if (mode === 'TPV') {
+            // Third Person View (Behind Player)
+            const camDistance = isADS ? 2.5 : 7.0;
+            const camHeight = isADS ? 1.8 : 3.5;
+            const offsetX = Math.sin(cameraYaw) * camDistance * Math.cos(cameraPitch);
+            const offsetZ = Math.cos(cameraYaw) * camDistance * Math.cos(cameraPitch);
+            const offsetY = Math.sin(cameraPitch) * camDistance + camHeight;
 
-        // 3. Free Fire Aim Lock Check (Turns Crosshair RED when looking at Boss)
+            camera.position.set(
+                playerGroup.position.x - offsetX,
+                playerGroup.position.y + offsetY,
+                playerGroup.position.z - offsetZ
+            );
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 2.0, playerGroup.position.z + 10);
+        }
+        else if (mode === 'FPV') {
+            // First Person View (At Player Head Eyes)
+            camera.position.set(
+                playerGroup.position.x,
+                playerGroup.position.y + 2.0,
+                playerGroup.position.z
+            );
+            const lookX = playerGroup.position.x + Math.sin(cameraYaw) * 10;
+            const lookZ = playerGroup.position.z + Math.cos(cameraYaw) * 10;
+            camera.lookAt(lookX, playerGroup.position.y + 2.0, lookZ);
+        }
+        else if (mode === 'SPV') {
+            // Second Person View (Boss Eye Perspective looking at Player!)
+            camera.position.set(
+                bossGroup.position.x,
+                bossGroup.position.y + 8.5,
+                bossGroup.position.z
+            );
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.5, playerGroup.position.z);
+        }
+
+        // 3. Aim Lock Crosshair
         checkAimLock();
 
         // 4. Auto Fire Combat
@@ -439,10 +534,8 @@
         const crosshair = document.getElementById('crosshair-container');
         if (intersects.length > 0) {
             crosshair.classList.add('aim-locked');
-            isAimLocked = true;
         } else {
             crosshair.classList.remove('aim-locked');
-            isAimLocked = false;
         }
     }
 
