@@ -12,19 +12,22 @@ jobs:
     name: Build Android APK 🚀
     runs-on: ubuntu-latest
     steps:
+      - name: Free Disk Space on Runner
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
-
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-${{ hashFiles('Assets/**', 'Packages/**') }}
-          restore-keys: |
-            Library-
 
       - name: Build Unity Android APK
         uses: game-ci/unity-builder@v4
