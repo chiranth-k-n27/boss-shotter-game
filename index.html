@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - PC Pointer Lock & Mobile Touch Controls</title>
+    <title>Free Fire 3D Boss Battle - Player Health & Fixed Camera</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -13,9 +13,17 @@
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Level Banner & PC Pointer Lock Help */
-        #level-banner { position: absolute; top: 15px; left: 20px; color: #ffcc00; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
-        #pc-controls-help { position: absolute; top: 50px; left: 20px; color: #00f0ff; font-size: 13px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; }
+        /* Level & Player HP Container (Top Left) */
+        #player-stats-container { position: absolute; top: 15px; left: 20px; display: flex; flex-direction: column; gap: 6px; }
+        #level-banner { color: #ffcc00; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
+
+        /* Player Health Bar */
+        #player-hp-box { width: 220px; background: rgba(15, 23, 42, 0.85); border: 2px solid #00f0ff; border-radius: 8px; padding: 6px; box-shadow: 0 0 12px rgba(0,240,255,0.4); }
+        #player-hp-label { color: #00f0ff; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; display: flex; justify-content: space-between; }
+        #player-hp-bar { width: 100%; height: 12px; background: #0f172a; border-radius: 4px; overflow: hidden; border: 1px solid #1e293b; }
+        #player-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #00f0ff); transition: width 0.15s ease-out; }
+
+        #pc-controls-help { color: #94a3b8; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; margin-top: 4px; }
 
         /* Free Fire Style Boss Health Bar */
         #boss-hp-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: rgba(15, 20, 30, 0.9); border: 2px solid #ff0055; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 0 20px rgba(255,0,85,0.5); }
@@ -25,7 +33,7 @@
         #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; }
         #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 2px; }
 
-        /* Virtual Touch Joystick Overlay (Mobile & PC Mouse Draggable) */
+        /* Virtual Touch Joystick Overlay */
         #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; }
         #joystick-knob { width: 50px; height: 50px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
 
@@ -46,7 +54,7 @@
         #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
         #btn-ads { bottom: 145px; right: 35px; background: rgba(0, 150, 255, 0.85); }
         #btn-reload { bottom: 145px; right: 120px; }
-        #btn-cam-toggle { top: 90px; left: 20px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 13px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
+        #btn-cam-toggle { top: 125px; left: 20px; width: auto; height: 38px; padding: 0 16px; border-radius: 19px; font-size: 12px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
         #btn-lockon { bottom: 225px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(255, 165, 0, 0.9); border-color: #ffaa00; }
         #btn-craft { bottom: 45px; left: 190px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
 
@@ -84,8 +92,17 @@
     <div id="boss-tag">💥 TITAN BOSS</div>
 
     <div id="hud-container">
-        <div id="level-banner">LEVEL 1</div>
-        <div id="pc-controls-help">💻 PC: WASD Move | Click Screen to Lock Mouse Aim | Right-Click Scope | R Reload</div>
+        <div id="player-stats-container">
+            <div id="level-banner">LEVEL 1</div>
+            <div id="player-hp-box">
+                <div id="player-hp-label">
+                    <span>HERO HEALTH</span>
+                    <span id="player-hp-val">100 / 100</span>
+                </div>
+                <div id="player-hp-bar"><div id="player-hp-fill"></div></div>
+            </div>
+            <div id="pc-controls-help">💻 PC: WASD Move | Click Screen to Lock Mouse Aim | R Reload | V Camera</div>
+        </div>
 
         <div id="boss-hp-container">
             <div id="boss-title">👹 TITAN MONSTER BOSS</div>
@@ -101,12 +118,10 @@
             <div id="challenge-progress" style="font-weight: bold; margin-top: 2px;">0 / 3</div>
         </div>
 
-        <!-- Touch / Mouse Draggable Joystick Element -->
         <div id="joystick-container" class="hud-element">
             <div id="joystick-knob"></div>
         </div>
 
-        <!-- Free Fire Red Aim Lock Crosshair -->
         <div id="crosshair-container">
             <div id="crosshair-ring"></div>
             <div id="crosshair-dot"></div>
@@ -159,15 +174,17 @@
     </div>
 
 <script>
-    // Free Fire Style 3D Engine Setup
     let scene, camera, renderer;
     let playerGroup, playerBody, gunMesh;
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
 
-    // Camera View Modes: TPV (Third-Person View), FPV (First-Person View), CINEMATIC (Boss Fight Overview)
+    // Camera Modes: TPV (Third Person - Behind & Above Head), FPV (First Person - At Head/Eyes), CINEMATIC
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
-    let currentCamModeIndex = 0; // Starts at TPV
+    let currentCamModeIndex = 0;
+
+    // Player HP State
+    let playerMaxHP = 100, playerCurrentHP = 100;
 
     // Game Progression
     let currentLevel = 1;
@@ -176,10 +193,10 @@
     let bossSpeed = 0.07;
     let isEnraged = false, isAttacking = false;
 
-    // Player State & Inputs
+    // Player Movement & Aiming Inputs
     let moveInput = { x: 0, y: 0 };
     let kbMoveInput = { x: 0, y: 0 };
-    let cameraYaw = 0, cameraPitch = 0.15;
+    let cameraYaw = 0, cameraPitch = 0.1;
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
@@ -205,7 +222,7 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Sunny Blue Sky
+        scene.background = new THREE.Color(0x87ceeb);
         scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -215,7 +232,6 @@
         renderer.shadowMap.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Sunlight Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
 
@@ -242,13 +258,8 @@
             scene.add(rock);
         });
 
-        // 1. Create Player Hero Avatar
         createPlayerHero();
-
-        // 2. Create Giant Boss Monster Titan
         createBossTitan();
-
-        // 3. Lock Camera to Face Boss
         faceBoss();
 
         recalculateStats();
@@ -272,18 +283,18 @@
         playerBody.castShadow = true;
         playerGroup.add(playerBody);
 
-        // Player Head
-        const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        // Player Head (Yellow Helmet)
+        const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
         const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 2.0;
+        head.position.y = 2.1; // Head height at Y = 2.1
         playerGroup.add(head);
 
         // Player Gun
         const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.8);
         const gunMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
         gunMesh = new THREE.Mesh(gunGeo, gunMat);
-        gunMesh.position.set(0.4, 1.2, 0.4);
+        gunMesh.position.set(0.4, 1.4, 0.4);
         playerGroup.add(gunMesh);
     }
 
@@ -334,14 +345,16 @@
         const dx = bossGroup.position.x - playerGroup.position.x;
         const dz = bossGroup.position.z - playerGroup.position.z;
         cameraYaw = Math.atan2(dx, dz);
-        cameraPitch = 0.15;
+        cameraPitch = 0.1;
     }
 
     function toggleCameraView() {
         currentCamModeIndex = (currentCamModeIndex + 1) % cameraModes.length;
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
-        playerBody.visible = (mode !== 'FPV');
+
+        // Hide player model only in FPV mode so head doesn't block camera
+        playerGroup.children.forEach(c => c.visible = (mode !== 'FPV'));
     }
 
     function setupJoystick() {
@@ -371,7 +384,6 @@
             moveInput.y = 0;
         };
 
-        // Touch Support
         container.addEventListener('touchstart', e => {
             active = true;
             const rect = container.getBoundingClientRect();
@@ -385,7 +397,6 @@
         });
         container.addEventListener('touchend', resetJoystick);
 
-        // PC Mouse Support on Joystick
         container.addEventListener('mousedown', e => {
             active = true;
             const rect = container.getBoundingClientRect();
@@ -408,7 +419,6 @@
         });
         window.addEventListener('keyup', e => keys[e.code] = false);
 
-        // PC Pointer Lock Mouse Aiming
         const container = document.getElementById('canvas-container');
         container.addEventListener('click', () => {
             document.body.requestPointerLock();
@@ -428,7 +438,6 @@
         });
         window.addEventListener('mouseup', e => { if (e.button === 0) isFiring = false; });
 
-        // Mobile Right-Side Camera Touch Aiming (Does NOT Trigger Firing!)
         let lastTouchPos = { x: 0, y: 0 };
         window.addEventListener('touchstart', e => {
             for (let t of e.touches) {
@@ -440,7 +449,6 @@
         window.addEventListener('touchmove', e => {
             for (let t of e.touches) {
                 if (t.clientX > window.innerWidth / 2) {
-                    // Check if touch is on HUD element
                     const elem = document.elementFromPoint(t.clientX, t.clientY);
                     if (elem && elem.closest('.hud-element')) continue;
 
@@ -451,7 +459,6 @@
             }
         });
 
-        // Mobile Button Bindings (STRICT explicit firing on FIRE button ONLY)
         const btnFire = document.getElementById('btn-fire');
         btnFire.addEventListener('touchstart', e => { isFiring = true; e.stopPropagation(); });
         btnFire.addEventListener('touchend', e => { isFiring = false; e.stopPropagation(); });
@@ -469,7 +476,7 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // Loop Keyboard WASD / Arrow Movement
+        // WASD Keyboard Inputs
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -479,67 +486,79 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Combined Movement Input (Joystick + Keyboard)
-        const finalMoveX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
-        const finalMoveY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
+        // 1. UNMIRRORED WASD & Joystick Movement Math:
+        // W = Move forward facing cameraYaw, S = Move backward, D = Strafe right, A = Strafe left
+        const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
+        const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
+
+        const forwardX = Math.sin(cameraYaw);
+        const forwardZ = Math.cos(cameraYaw);
+        const rightX = Math.cos(cameraYaw);
+        const rightZ = -Math.sin(cameraYaw);
 
         const speed = 0.18;
-        playerGroup.rotation.y = cameraYaw;
-        playerGroup.translateX(finalMoveX * speed);
-        playerGroup.translateZ(-finalMoveY * speed);
+        const moveX = (rightX * rawX) + (forwardX * rawY);
+        const moveZ = (rightZ * rawX) + (forwardZ * rawY);
 
-        // Camera Perspective Modes: TPV, FPV, CINEMATIC
+        playerGroup.position.x += moveX * speed;
+        playerGroup.position.z += moveZ * speed;
+
+        // Player Model rotates to face camera heading
+        playerGroup.rotation.y = cameraYaw;
+
+        // 2. Exact Camera View Positioning:
         const mode = cameraModes[currentCamModeIndex];
 
         if (mode === 'TPV') {
-            // Third Person View (Over the shoulder)
-            const camDistance = isADS ? 2.5 : 7.0;
-            const camHeight = isADS ? 1.8 : 3.5;
-            const offsetX = Math.sin(cameraYaw) * camDistance * Math.cos(cameraPitch);
-            const offsetZ = Math.cos(cameraYaw) * camDistance * Math.cos(cameraPitch);
-            const offsetY = Math.sin(cameraPitch) * camDistance + camHeight;
+            // TPV: Camera positioned slightly behind and above player's head (Head Y = 2.1)
+            const distance = isADS ? 2.2 : 3.8;
+            const height = isADS ? 2.3 : 2.7; // Slightly above head level
 
-            camera.position.set(
-                playerGroup.position.x - offsetX,
-                playerGroup.position.y + offsetY,
-                playerGroup.position.z - offsetZ
-            );
-            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 2.0, playerGroup.position.z + 10);
+            const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance * Math.cos(cameraPitch);
+            const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance * Math.cos(cameraPitch);
+            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance;
+
+            camera.position.set(camX, camY, camZ);
+            
+            // Look target at shoulder / crosshair ahead
+            const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 15;
+            const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 15;
+            camera.lookAt(targetX, playerGroup.position.y + 2.0, targetZ);
         }
         else if (mode === 'FPV') {
-            // First Person View (Sight view straight down gun)
+            // FPV: Camera placed directly inside player's head / eyes (Y = 2.1)
             camera.position.set(
                 playerGroup.position.x,
-                playerGroup.position.y + 2.0,
+                playerGroup.position.y + 2.1,
                 playerGroup.position.z
             );
-            const lookX = playerGroup.position.x + Math.sin(cameraYaw) * 10;
-            const lookZ = playerGroup.position.z + Math.cos(cameraYaw) * 10;
-            camera.lookAt(lookX, playerGroup.position.y + 2.0, lookZ);
+            const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 15;
+            const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 15;
+            const targetY = playerGroup.position.y + 2.1 - Math.sin(cameraPitch) * 15;
+            camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'CINEMATIC') {
-            // Cinematic Overview View
+            // Cinematic Overview Camera
             camera.position.set(0, 18, -25);
             camera.lookAt(bossGroup.position.x, bossGroup.position.y + 3.0, bossGroup.position.z);
         }
 
-        // Aim Lock Crosshair Indicator
         checkAimLock();
 
-        // Firing Combat
+        // Auto Fire Combat
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // Boss AI Logic
+        // Boss AI Logic & Player Damage
         if (bossCurrentHP > 0) {
             const dist = playerGroup.position.distanceTo(bossGroup.position);
             bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
 
             if (!isAttacking) {
-                if (dist > 8) {
+                if (dist > 7) {
                     bossGroup.position.addScaledVector(playerGroup.position.clone().sub(bossGroup.position).normalize(), bossSpeed);
                 } else {
                     executeBossAttack();
@@ -617,8 +636,29 @@
                 attackIndicator.scale.set(0.1, 1, 0.1);
                 isAttacking = false;
                 document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL & APPROACH';
+                
+                // Damage Player if within slam radius
+                const dist = playerGroup.position.distanceTo(bossGroup.position);
+                if (dist < 8) {
+                    damagePlayer(30);
+                }
             }
         }, 50);
+    }
+
+    function damagePlayer(dmg) {
+        playerCurrentHP = Math.max(0, playerCurrentHP - dmg);
+        updateHUD();
+
+        if (playerCurrentHP <= 0) {
+            // Player Respawn Routine
+            setTimeout(() => {
+                playerCurrentHP = playerMaxHP;
+                playerGroup.position.set(0, 0, -10);
+                faceBoss();
+                updateHUD();
+            }, 1200);
+        }
     }
 
     function reloadWeapon() {
@@ -717,6 +757,9 @@
         document.getElementById('ammo-val').innerText = `${currentAmmo} / ${effectiveStats.maxAmmo}`;
         document.getElementById('boss-hp-fill').style.width = `${(bossCurrentHP / bossMaxHP) * 100}%`;
         document.getElementById('boss-hp-text').innerText = `${Math.ceil(bossCurrentHP)} / ${bossMaxHP} HP`;
+
+        document.getElementById('player-hp-fill').style.width = `${(playerCurrentHP / playerMaxHP) * 100}%`;
+        document.getElementById('player-hp-val').innerText = `${Math.ceil(playerCurrentHP)} / ${playerMaxHP}`;
     }
 
     function levelCleared() {
