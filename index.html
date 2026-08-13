@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - Multi-Camera & Touch Joystick</title>
+    <title>Free Fire 3D Boss Battle - PC Pointer Lock & Mobile Touch Controls</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
-        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
         /* HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Level Banner & Score */
+        /* Level Banner & PC Pointer Lock Help */
         #level-banner { position: absolute; top: 15px; left: 20px; color: #ffcc00; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
+        #pc-controls-help { position: absolute; top: 50px; left: 20px; color: #00f0ff; font-size: 13px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; }
 
         /* Free Fire Style Boss Health Bar */
         #boss-hp-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: rgba(15, 20, 30, 0.9); border: 2px solid #ff0055; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 0 20px rgba(255,0,85,0.5); }
@@ -24,9 +25,9 @@
         #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; }
         #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 2px; }
 
-        /* Virtual Touch Joystick Overlay (Left Side Mobile) */
-        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; }
-        #joystick-knob { width: 50px; height: 50px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px #00c8ff; transform: translate(0px, 0px); transition: transform 0.05s ease-out; }
+        /* Virtual Touch Joystick Overlay (Mobile & PC Mouse Draggable) */
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; touch-action: none; }
+        #joystick-knob { width: 50px; height: 50px; background: rgba(0, 200, 255, 0.85); border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px #00c8ff; transform: translate(0px, 0px); pointer-events: none; }
 
         /* Free Fire Dynamic Red Aim-Assist Crosshair */
         #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; pointer-events: none; }
@@ -39,13 +40,13 @@
         #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 0 0 12px #000, 2px 2px 4px #000; }
         #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; }
 
-        /* Free Fire Style Mobile Action Buttons */
+        /* Free Fire Action Buttons */
         .btn-action { position: absolute; width: 72px; height: 72px; background: rgba(20, 30, 48, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 15px rgba(0,170,255,0.4); text-transform: uppercase; }
         .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.92); }
         #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
         #btn-ads { bottom: 145px; right: 35px; background: rgba(0, 150, 255, 0.85); }
         #btn-reload { bottom: 145px; right: 120px; }
-        #btn-cam-toggle { top: 80px; left: 20px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 13px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
+        #btn-cam-toggle { top: 90px; left: 20px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 13px; background: rgba(147, 51, 234, 0.9); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
         #btn-lockon { bottom: 225px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(255, 165, 0, 0.9); border-color: #ffaa00; }
         #btn-craft { bottom: 45px; left: 190px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
 
@@ -84,6 +85,7 @@
 
     <div id="hud-container">
         <div id="level-banner">LEVEL 1</div>
+        <div id="pc-controls-help">💻 PC: WASD Move | Click Screen to Lock Mouse Aim | Right-Click Scope | R Reload</div>
 
         <div id="boss-hp-container">
             <div id="boss-title">👹 TITAN MONSTER BOSS</div>
@@ -99,7 +101,7 @@
             <div id="challenge-progress" style="font-weight: bold; margin-top: 2px;">0 / 3</div>
         </div>
 
-        <!-- Touch Joystick Element for Mobile Movement -->
+        <!-- Touch / Mouse Draggable Joystick Element -->
         <div id="joystick-container" class="hud-element">
             <div id="joystick-knob"></div>
         </div>
@@ -163,8 +165,8 @@
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
 
-    // Camera View Modes: TPV (Third-Person), FPV (First-Person), SPV (Second-Person/Boss Eye View)
-    const cameraModes = ['TPV', 'FPV', 'SPV'];
+    // Camera View Modes: TPV (Third-Person View), FPV (First-Person View), CINEMATIC (Boss Fight Overview)
+    const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
     let currentCamModeIndex = 0; // Starts at TPV
 
     // Game Progression
@@ -174,9 +176,10 @@
     let bossSpeed = 0.07;
     let isEnraged = false, isAttacking = false;
 
-    // Player State & Weapon
+    // Player State & Inputs
     let moveInput = { x: 0, y: 0 };
-    let cameraYaw = 0, cameraPitch = 0.2;
+    let kbMoveInput = { x: 0, y: 0 };
+    let cameraYaw = 0, cameraPitch = 0.15;
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
@@ -250,7 +253,7 @@
 
         recalculateStats();
         setupInputHandlers();
-        setupTouchJoystick();
+        setupJoystick();
         setupCraftingUI();
 
         setInterval(startRandomChallenge, 30000);
@@ -276,7 +279,7 @@
         head.position.y = 2.0;
         playerGroup.add(head);
 
-        // Player Gun (Held in hand)
+        // Player Gun
         const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.8);
         const gunMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
         gunMesh = new THREE.Mesh(gunGeo, gunMat);
@@ -338,51 +341,62 @@
         currentCamModeIndex = (currentCamModeIndex + 1) % cameraModes.length;
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
-
-        // Toggle player body visibility for FPV
         playerBody.visible = (mode !== 'FPV');
     }
 
-    function setupTouchJoystick() {
+    function setupJoystick() {
         const container = document.getElementById('joystick-container');
         const knob = document.getElementById('joystick-knob');
-        let touchId = null;
+        let active = false;
         let center = { x: 0, y: 0 };
 
-        container.addEventListener('touchstart', e => {
-            const t = e.touches[0];
-            touchId = t.identifier;
-            const rect = container.getBoundingClientRect();
-            center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        });
+        const updateJoystick = (clientX, clientY) => {
+            const dx = clientX - center.x;
+            const dy = clientY - center.y;
+            const dist = Math.min(45, Math.hypot(dx, dy));
+            const angle = Math.atan2(dy, dx);
 
-        container.addEventListener('touchmove', e => {
-            for (let t of e.touches) {
-                if (t.identifier === touchId) {
-                    const dx = t.clientX - center.x;
-                    const dy = t.clientY - center.y;
-                    const dist = Math.min(45, Math.hypot(dx, dy));
-                    const angle = Math.atan2(dy, dx);
+            const knobX = Math.cos(angle) * dist;
+            const knobY = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
-                    const knobX = Math.cos(angle) * dist;
-                    const knobY = Math.sin(angle) * dist;
-                    knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-
-                    moveInput.x = knobX / 45;
-                    moveInput.y = -knobY / 45;
-                }
-            }
-        });
+            moveInput.x = knobX / 45;
+            moveInput.y = -knobY / 45;
+        };
 
         const resetJoystick = () => {
-            touchId = null;
+            active = false;
             knob.style.transform = `translate(0px, 0px)`;
             moveInput.x = 0;
             moveInput.y = 0;
         };
 
+        // Touch Support
+        container.addEventListener('touchstart', e => {
+            active = true;
+            const rect = container.getBoundingClientRect();
+            center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+            e.stopPropagation();
+        });
+        container.addEventListener('touchmove', e => {
+            if (active) updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+            e.stopPropagation();
+        });
         container.addEventListener('touchend', resetJoystick);
-        container.addEventListener('touchcancel', resetJoystick);
+
+        // PC Mouse Support on Joystick
+        container.addEventListener('mousedown', e => {
+            active = true;
+            const rect = container.getBoundingClientRect();
+            center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            updateJoystick(e.clientX, e.clientY);
+            e.stopPropagation();
+        });
+        window.addEventListener('mousemove', e => {
+            if (active) updateJoystick(e.clientX, e.clientY);
+        });
+        window.addEventListener('mouseup', () => { if (active) resetJoystick(); });
     }
 
     function setupInputHandlers() {
@@ -394,20 +408,27 @@
         });
         window.addEventListener('keyup', e => keys[e.code] = false);
 
+        // PC Pointer Lock Mouse Aiming
+        const container = document.getElementById('canvas-container');
+        container.addEventListener('click', () => {
+            document.body.requestPointerLock();
+        });
+
         window.addEventListener('mousemove', e => {
             if (document.pointerLockElement === document.body) {
-                cameraYaw -= e.movementX * 0.003;
-                cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + e.movementY * 0.003));
+                cameraYaw -= e.movementX * 0.0025;
+                cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + e.movementY * 0.0025));
             }
         });
 
         window.addEventListener('mousedown', e => {
+            if (e.target.closest('.hud-element') || e.target.closest('#crafting-panel')) return;
             if (e.button === 0) isFiring = true;
             if (e.button === 2) isADS = !isADS;
         });
         window.addEventListener('mouseup', e => { if (e.button === 0) isFiring = false; });
 
-        // Touch Look Controls (Right Side Drag)
+        // Mobile Right-Side Camera Touch Aiming (Does NOT Trigger Firing!)
         let lastTouchPos = { x: 0, y: 0 };
         window.addEventListener('touchstart', e => {
             for (let t of e.touches) {
@@ -419,16 +440,24 @@
         window.addEventListener('touchmove', e => {
             for (let t of e.touches) {
                 if (t.clientX > window.innerWidth / 2) {
-                    cameraYaw -= (t.clientX - lastTouchPos.x) * 0.005;
-                    cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + (t.clientY - lastTouchPos.y) * 0.005));
+                    // Check if touch is on HUD element
+                    const elem = document.elementFromPoint(t.clientX, t.clientY);
+                    if (elem && elem.closest('.hud-element')) continue;
+
+                    cameraYaw -= (t.clientX - lastTouchPos.x) * 0.004;
+                    cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + (t.clientY - lastTouchPos.y) * 0.004));
                     lastTouchPos = { x: t.clientX, y: t.clientY };
                 }
             }
         });
 
-        // Mobile Buttons
-        document.getElementById('btn-fire').addEventListener('touchstart', () => isFiring = true);
-        document.getElementById('btn-fire').addEventListener('touchend', () => isFiring = false);
+        // Mobile Button Bindings (STRICT explicit firing on FIRE button ONLY)
+        const btnFire = document.getElementById('btn-fire');
+        btnFire.addEventListener('touchstart', e => { isFiring = true; e.stopPropagation(); });
+        btnFire.addEventListener('touchend', e => { isFiring = false; e.stopPropagation(); });
+        btnFire.addEventListener('mousedown', e => { isFiring = true; e.stopPropagation(); });
+        btnFire.addEventListener('mouseup', e => { isFiring = false; e.stopPropagation(); });
+
         document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
         document.getElementById('btn-reload').addEventListener('click', reloadWeapon);
         document.getElementById('btn-cam-toggle').addEventListener('click', toggleCameraView);
@@ -440,29 +469,30 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // Keyboard WASD Movement Update Loop
+        // Loop Keyboard WASD / Arrow Movement
         setInterval(() => {
-            if (moveInput.x === 0 && moveInput.y === 0) {
-                moveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
-                moveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-            }
+            kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+            kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
         }, 16);
     }
 
     function animate() {
         requestAnimationFrame(animate);
 
-        // 1. Responsive Player Movement Logic
+        // Combined Movement Input (Joystick + Keyboard)
+        const finalMoveX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
+        const finalMoveY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
+
         const speed = 0.18;
         playerGroup.rotation.y = cameraYaw;
-        playerGroup.translateX(moveInput.x * speed);
-        playerGroup.translateZ(-moveInput.y * speed);
+        playerGroup.translateX(finalMoveX * speed);
+        playerGroup.translateZ(-finalMoveY * speed);
 
-        // 2. Multi-Camera Modes: TPV, FPV, SPV
+        // Camera Perspective Modes: TPV, FPV, CINEMATIC
         const mode = cameraModes[currentCamModeIndex];
 
         if (mode === 'TPV') {
-            // Third Person View (Behind Player)
+            // Third Person View (Over the shoulder)
             const camDistance = isADS ? 2.5 : 7.0;
             const camHeight = isADS ? 1.8 : 3.5;
             const offsetX = Math.sin(cameraYaw) * camDistance * Math.cos(cameraPitch);
@@ -477,7 +507,7 @@
             camera.lookAt(playerGroup.position.x, playerGroup.position.y + 2.0, playerGroup.position.z + 10);
         }
         else if (mode === 'FPV') {
-            // First Person View (At Player Head Eyes)
+            // First Person View (Sight view straight down gun)
             camera.position.set(
                 playerGroup.position.x,
                 playerGroup.position.y + 2.0,
@@ -487,27 +517,23 @@
             const lookZ = playerGroup.position.z + Math.cos(cameraYaw) * 10;
             camera.lookAt(lookX, playerGroup.position.y + 2.0, lookZ);
         }
-        else if (mode === 'SPV') {
-            // Second Person View (Boss Eye Perspective looking at Player!)
-            camera.position.set(
-                bossGroup.position.x,
-                bossGroup.position.y + 8.5,
-                bossGroup.position.z
-            );
-            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.5, playerGroup.position.z);
+        else if (mode === 'CINEMATIC') {
+            // Cinematic Overview View
+            camera.position.set(0, 18, -25);
+            camera.lookAt(bossGroup.position.x, bossGroup.position.y + 3.0, bossGroup.position.z);
         }
 
-        // 3. Aim Lock Crosshair
+        // Aim Lock Crosshair Indicator
         checkAimLock();
 
-        // 4. Auto Fire Combat
+        // Firing Combat
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // 5. Boss AI Logic
+        // Boss AI Logic
         if (bossCurrentHP > 0) {
             const dist = playerGroup.position.distanceTo(bossGroup.position);
             bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
