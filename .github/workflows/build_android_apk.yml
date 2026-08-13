@@ -1,0 +1,40 @@
+name: Build Unity Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  buildAndroid:
+    name: Build Android APK 🚀
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**') }}
+          restore-keys: |
+            Library-
+
+      - name: Build Unity Android APK
+        uses: game-ci/unity-builder@v4
+        with:
+          targetPlatform: Android
+          androidAppBundle: false
+          buildName: 3D_Mobile_Shooter
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3D_Mobile_Shooter_APK
+          path: build/Android/3D_Mobile_Shooter.apk
