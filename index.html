@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Mobile Shooter - Modular Weapon Crafting & Boss FSM</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #05070a; font-family: 'Segoe UI', Roboto, sans-serif; }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* HUD Overlay */
+        #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        .hud-element { pointer-events: auto; }
+
+        /* Level Banner */
+        #level-banner { position: absolute; top: 20px; left: 20px; color: #00f0ff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+
+        /* Boss Health Bar */
+        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 340px; background: rgba(10, 15, 25, 0.85); border: 2px solid #2a3548; border-radius: 8px; padding: 8px; text-align: center; }
+        #boss-hp-bar { width: 100%; height: 16px; background: #1a202c; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff3366, #ff0033); transition: width 0.15s ease-out; }
+        #boss-hp-text { color: #fff; font-size: 13px; font-weight: 600; }
+        #boss-phase-badge { color: #ffcc00; font-size: 14px; font-weight: bold; margin-top: 2px; }
+
+        /* Challenge Widget */
+        #challenge-widget { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.85); border: 1px solid #00aaff; border-radius: 6px; padding: 6px 16px; color: #fff; font-size: 14px; display: none; text-align: center; }
+        #reward-notification { position: absolute; bottom: 120px; left: 20px; color: #00ff88; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,136,0.6); }
+
+        /* Crosshair & Ammo */
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: rgba(255,255,255,0.8); border-radius: 50%; border: 2px solid rgba(0,0,0,0.5); }
+        #ammo-display { position: absolute; bottom: 30px; right: 30px; color: #fff; font-size: 32px; font-weight: bold; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+
+        /* Touch Buttons */
+        .btn-action { position: absolute; width: 70px; height: 70px; background: rgba(20, 30, 50, 0.8); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: bold; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 12px rgba(0,170,255,0.4); }
+        .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.95); }
+        #btn-fire { bottom: 40px; right: 120px; width: 85px; height: 85px; background: rgba(180, 20, 40, 0.85); border-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.5); }
+        #btn-ads { bottom: 135px; right: 30px; }
+        #btn-reload { bottom: 135px; right: 110px; }
+        #btn-craft { bottom: 40px; left: 30px; width: auto; height: 45px; padding: 0 20px; border-radius: 8px; background: rgba(0, 150, 255, 0.85); }
+
+        /* Floating Damage Text Container */
+        #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .floating-damage { position: absolute; font-weight: 800; font-size: 24px; text-shadow: 0 0 5px #000; animation: floatUp 0.8s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
+
+        /* Crafting UI Panel */
+        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 750px; height: 80%; max-height: 500px; background: rgba(10, 14, 22, 0.95); border: 2px solid #00f0ff; border-radius: 12px; z-index: 100; display: none; padding: 20px; box-shadow: 0 0 30px rgba(0,240,255,0.3); color: #fff; }
+        .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2638; padding-bottom: 10px; margin-bottom: 15px; }
+        .crafting-body { display: flex; height: calc(100% - 110px); gap: 20px; }
+        .attachment-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .att-btn { background: rgba(20, 30, 48, 0.8); border: 1px solid #2a3e5c; padding: 10px; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .att-btn:hover, .att-btn.active { background: rgba(0, 170, 255, 0.3); border-color: #00aaff; }
+        .stats-panel { flex: 1; background: rgba(15, 22, 34, 0.9); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-around; }
+        .stat-row { display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 13px; color: #a0aec0; }
+        .stat-bar-bg { width: 100%; height: 8px; background: #1a202c; border-radius: 4px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; background: #00f0ff; width: 50%; transition: width 0.2s; }
+        #btn-close-craft { align-self: center; margin-top: 15px; padding: 10px 30px; background: #00aaff; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div id="damage-text-container"></div>
+
+    <div id="hud-container">
+        <div id="level-banner">LEVEL 1</div>
+
+        <div id="boss-hp-container">
+            <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
+            <div id="boss-hp-text">800 / 800 HP</div>
+            <div id="boss-phase-badge">PHASE 1: PATROL</div>
+        </div>
+
+        <div id="challenge-widget">
+            <span id="challenge-title">CHALLENGE: Land 3 Headshots!</span>
+            <div id="challenge-progress" style="font-weight: bold; margin-top: 2px;">0 / 3</div>
+        </div>
+
+        <div id="reward-notification"></div>
+
+        <div id="crosshair"></div>
+        <div id="ammo-display">30 / 30</div>
+
+        <div id="btn-fire" class="hud-element btn-action">FIRE</div>
+        <div id="btn-ads" class="hud-element btn-action">ADS</div>
+        <div id="btn-reload" class="hud-element btn-action">RELOAD</div>
+        <div id="btn-craft" class="hud-element btn-action">🛠️ WEAPON BENCH</div>
+    </div>
+
+    <!-- Crafting Modal -->
+    <div id="crafting-panel">
+        <div class="crafting-header">
+            <h2 id="custom-weapon-title" style="color: #00f0ff; font-size: 20px;">WEAPON: HEAVY PLASMA CANNON</h2>
+            <span style="font-size: 12px; color: #718096;">MODULAR CRAFTING BENCH</span>
+        </div>
+        <div class="crafting-body">
+            <div class="attachment-list" id="attachment-list-container">
+                <!-- Dynamically populated buttons -->
+            </div>
+            <div class="stats-panel">
+                <div class="stat-row">
+                    <div class="stat-label"><span>DAMAGE</span><span id="val-dmg">25</span></div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-dmg"></div></div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-label"><span>FIRE RATE</span><span id="val-fr">6.6/s</span></div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fr"></div></div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-label"><span>RECOIL</span><span id="val-rec">0.50</span></div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-rec"></div></div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-label"><span>BULLET VELOCITY</span><span id="val-vel">100m/s</span></div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-vel"></div></div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-label"><span>AMMO CAPACITY</span><span id="val-cap">30</span></div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-cap"></div></div>
+                </div>
+            </div>
+        </div>
+        <button id="btn-close-craft">BACK TO COMBAT</button>
+    </div>
+
+<script>
+    // Game Core Engine
+    let scene, camera, renderer;
+    let player, cameraPivot, weaponMesh;
+    let boss, bossBodyMesh, bossHeadMesh, bossArmorMesh, attackIndicatorMesh;
+    
+    // Game State
+    let currentLevel = 1;
+    let baseBossHP = 800;
+    let bossMaxHP = 800, bossCurrentHP = 800;
+    let bossState = 'Patrol'; // Patrol, Telegraphed, Enraged, Dead
+    let bossSpeed = 0.06;
+    let isEnraged = false;
+    let isAttacking = false;
+
+    // Player State
+    let moveInput = { x: 0, y: 0 };
+    let lookInput = { x: 0, y: 0 };
+    let isFiring = false, isADS = false, isReloading = false;
+    let currentAmmo = 30, maxAmmo = 30;
+    let lastFireTime = 0;
+    let recoilOffset = { x: 0, y: 0 };
+
+    // Challenge System
+    let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
+    let challengeTimer = null;
+    let overdriveBuff = 1.0;
+
+    // Attachments & Stats
+    const baseStats = { damage: 25, fireRate: 0.15, recoil: 0.5, velocity: 100, adsSpeed: 8, maxAmmo: 30 };
+    let effectiveStats = { ...baseStats };
+
+    const attachmentsPool = [
+        { id: 'b1', name: 'Heavy Plasma Barrel', type: 'Barrel', dmgMult: 1.4, velMult: 1.6, frOff: 0.04, color: 0x00f0ff },
+        { id: 'b2', name: 'Rapid CQB Barrel', type: 'Barrel', dmgMult: 1.0, velMult: 1.0, frOff: -0.05, recRed: 0.2, color: 0xffcc00 },
+        { id: 's1', name: 'Thermal Sniper Scope', type: 'Scope', adsMult: 1.4, dmgMult: 1.15, color: 0xff3366 },
+        { id: 'st1', name: 'Heavy Armored Stock', type: 'Stock', recRed: 0.5, adsMult: 0.85, color: 0x3366ff },
+        { id: 'm1', name: 'Hyper Drum Mag 50R', type: 'Magazine', bonusCap: 20, color: 0x00ff88 }
+    ];
+    let equippedAttachments = { Barrel: attachmentsPool[0], Scope: null, Stock: null, Magazine: null };
+
+    init();
+    animate();
+
+    function init() {
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05070a);
+        scene.fog = new THREE.FogExp2(0x05070a, 0.015);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // Environment Ground
+        const floorGeo = new THREE.PlaneGeometry(80, 80);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a2332, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Cover Blocks
+        const boxGeo = new THREE.BoxGeometry(4, 4, 4);
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0x2a384d });
+        [ [-10, 2, 8], [10, 2, 8], [-8, 2, -10], [8, 2, -10] ].forEach(pos => {
+            const box = new THREE.Mesh(boxGeo, boxMat);
+            box.position.set(...pos);
+            scene.add(box);
+        });
+
+        // Player Setup
+        player = new THREE.Object3D();
+        player.position.set(0, 1.6, -20);
+        scene.add(player);
+
+        cameraPivot = new THREE.Object3D();
+        player.add(cameraPivot);
+        cameraPivot.add(camera);
+
+        // Weapon Mesh Base
+        const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.7);
+        const gunMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        weaponMesh = new THREE.Mesh(gunGeo, gunMat);
+        weaponMesh.position.set(0.35, -0.3, 0.6);
+        cameraPivot.add(weaponMesh);
+
+        // Boss Setup
+        createBoss();
+
+        // Recalculate Stats & UI
+        recalculateStats();
+        setupInputHandlers();
+        setupCraftingUI();
+
+        // Start Challenge loop
+        setInterval(startRandomChallenge, 30000);
+    }
+
+    function createBoss() {
+        boss = new THREE.Group();
+        boss.position.set(0, 0, 15);
+        scene.add(boss);
+
+        // Body (1.0x Damage)
+        const bodyGeo = new THREE.CylinderGeometry(1.5, 1.5, 3.5, 16);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff00ff });
+        bossBodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+        bossBodyMesh.position.y = 2.5;
+        bossBodyMesh.userData = { type: 'Body' };
+        boss.add(bossBodyMesh);
+
+        // Head Weak Point (2.5x CRIT Damage)
+        const headGeo = new THREE.SphereGeometry(1.0, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        bossHeadMesh = new THREE.Mesh(headGeo, headMat);
+        bossHeadMesh.position.y = 5.2;
+        bossHeadMesh.userData = { type: 'Head' };
+        boss.add(bossHeadMesh);
+
+        // Chest Armor Plate (0.5x Damage)
+        const armorGeo = new THREE.BoxGeometry(1.8, 2.0, 0.4);
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        bossArmorMesh = new THREE.Mesh(armorGeo, armorMat);
+        bossArmorMesh.position.set(0, 2.5, -1.6);
+        bossArmorMesh.userData = { type: 'Armor' };
+        boss.add(bossArmorMesh);
+
+        // Telegraph Ring
+        const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
+        attackIndicatorMesh = new THREE.Mesh(ringGeo, ringMat);
+        attackIndicatorMesh.position.y = 0.05;
+        boss.add(attackIndicatorMesh);
+    }
+
+    function setupInputHandlers() {
+        // Keyboard & Mouse Fallback
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'KeyR') reloadWeapon();
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        window.addEventListener('mousemove', e => {
+            if (document.pointerLockElement === document.body) {
+                lookInput.x += e.movementX * 0.002;
+                lookInput.y += e.movementY * 0.002;
+            }
+        });
+
+        window.addEventListener('mousedown', e => {
+            if (e.button === 0) isFiring = true;
+            if (e.button === 1) isADS = !isADS;
+        });
+        window.addEventListener('mouseup', e => { if (e.button === 0) isFiring = false; });
+
+        // Touch Input Support
+        let lastTouchPos = { x: 0, y: 0 };
+        window.addEventListener('touchstart', e => {
+            for (let t of e.touches) {
+                if (t.clientX > window.innerWidth / 2) {
+                    lastTouchPos = { x: t.clientX, y: t.clientY };
+                }
+            }
+        });
+        window.addEventListener('touchmove', e => {
+            for (let t of e.touches) {
+                if (t.clientX > window.innerWidth / 2) {
+                    lookInput.x += (t.clientX - lastTouchPos.x) * 0.005;
+                    lookInput.y += (t.clientY - lastTouchPos.y) * 0.005;
+                    lastTouchPos = { x: t.clientX, y: t.clientY };
+                }
+            }
+        });
+
+        // UI Buttons
+        document.getElementById('btn-fire').addEventListener('touchstart', () => isFiring = true);
+        document.getElementById('btn-fire').addEventListener('touchend', () => isFiring = false);
+        document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
+        document.getElementById('btn-reload').addEventListener('click', reloadWeapon);
+        document.getElementById('btn-craft').addEventListener('click', () => {
+            document.getElementById('crafting-panel').style.display = 'block';
+        });
+        document.getElementById('btn-close-craft').addEventListener('click', () => {
+            document.getElementById('crafting-panel').style.display = 'none';
+        });
+
+        // Loop Keyboard Movement
+        setInterval(() => {
+            moveInput.x = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
+            moveInput.y = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+        }, 16);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Player Movement
+        const speed = 0.12;
+        player.translateX(moveInput.x * speed);
+        player.translateZ(-moveInput.y * speed);
+
+        // Camera Look
+        player.rotation.y -= lookInput.x;
+        cameraPivot.rotation.x = Math.max(-1.4, Math.min(1.4, cameraPivot.rotation.x - lookInput.y));
+        lookInput.x = 0; lookInput.y = 0;
+
+        // ADS Zoom
+        const targetFOV = isADS ? 35 : 60;
+        camera.fov += (targetFOV - camera.fov) * 0.1;
+        camera.updateProjectionMatrix();
+
+        // Combat Auto-Fire
+        const now = performance.now() / 1000;
+        if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
+            if (currentAmmo > 0) fireWeapon(now);
+            else reloadWeapon();
+        }
+
+        // Boss AI Logic
+        if (bossCurrentHP > 0) {
+            const dist = boss.position.distanceTo(player.position);
+            boss.lookAt(player.position.x, boss.position.y, player.position.z);
+
+            if (!isAttacking) {
+                if (dist > 6) {
+                    boss.position.addScaledVector(player.position.clone().sub(boss.position).normalize(), bossSpeed);
+                } else {
+                    executeBossAttack();
+                }
+            }
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    function fireWeapon(now) {
+        lastFireTime = now;
+        currentAmmo--;
+        updateHUD();
+
+        // Raycast Shot
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects([bossBodyMesh, bossHeadMesh, bossArmorMesh]);
+
+        if (intersects.length > 0) {
+            const hitObj = intersects[0].object;
+            const hitType = hitObj.userData.type || 'Body';
+            let mult = 1.0;
+            if (hitType === 'Head') mult = 2.5;
+            if (hitType === 'Armor') mult = 0.5;
+
+            const finalDamage = effectiveStats.damage * mult * overdriveBuff;
+            bossCurrentHP = Math.max(0, bossCurrentHP - finalDamage);
+
+            spawnDamageText(finalDamage, hitType, intersects[0].point);
+            updateHUD();
+
+            // Challenge Progress
+            if (challengeActive) {
+                if (hitType === 'Head') {
+                    challengeProgress++;
+                    document.getElementById('challenge-progress').innerText = `${challengeProgress} / ${challengeGoal}`;
+                    if (challengeProgress >= challengeGoal) completeChallenge();
+                }
+            }
+
+            // Phase 2 Enrage Check (50% HP)
+            if (!isEnraged && bossCurrentHP <= bossMaxHP * 0.5) {
+                isEnraged = true;
+                bossBodyMesh.material.color.setHex(0xff0033);
+                bossSpeed *= 1.6;
+                document.getElementById('boss-phase-badge').innerText = 'PHASE 2: ENRAGED!';
+            }
+
+            if (bossCurrentHP <= 0) levelCleared();
+        }
+    }
+
+    function executeBossAttack() {
+        isAttacking = true;
+        document.getElementById('boss-phase-badge').innerText = 'WARNING: INCOMING ATTACK!';
+
+        let scale = 0;
+        const interval = setInterval(() => {
+            scale += 0.2;
+            attackIndicatorMesh.scale.set(scale, 1, scale);
+            if (scale >= 6) {
+                clearInterval(interval);
+                attackIndicatorMesh.scale.set(0.1, 1, 0.1);
+                isAttacking = false;
+                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL';
+            }
+        }, 50);
+    }
+
+    function reloadWeapon() {
+        if (isReloading) return;
+        isReloading = true;
+        setTimeout(() => {
+            currentAmmo = effectiveStats.maxAmmo;
+            isReloading = false;
+            updateHUD();
+        }, 1500);
+    }
+
+    function spawnDamageText(dmg, type, worldPos) {
+        const elem = document.createElement('div');
+        elem.className = 'floating-damage';
+        elem.innerText = Math.round(dmg);
+        elem.style.color = type === 'Head' ? '#ffff00' : (type === 'Armor' ? '#a0aec0' : '#ffffff');
+
+        const proj = worldPos.clone().project(camera);
+        const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-proj.y * 0.5 + 0.5) * window.innerHeight;
+        elem.style.left = `${x}px`;
+        elem.style.top = `${y}px`;
+
+        document.getElementById('damage-text-container').appendChild(elem);
+        setTimeout(() => elem.remove(), 800);
+    }
+
+    function recalculateStats() {
+        let dmgM = 1, frO = 0, recR = 0, velM = 1, adsM = 1, bonusCap = 0;
+        Object.values(equippedAttachments).forEach(att => {
+            if (!att) return;
+            if (att.dmgMult) dmgM *= att.dmgMult;
+            if (att.frOff) frO += att.frOff;
+            if (att.recRed) recR += att.recRed;
+            if (att.velMult) velM *= att.velMult;
+            if (att.adsMult) adsM *= att.adsMult;
+            if (att.bonusCap) bonusCap += att.bonusCap;
+        });
+
+        effectiveStats.damage = baseStats.damage * dmgM;
+        effectiveStats.fireRate = Math.max(0.04, baseStats.fireRate + frO);
+        effectiveStats.recoil = Math.max(0.05, baseStats.recoil * (1 - recR));
+        effectiveStats.velocity = baseStats.velocity * velM;
+        effectiveStats.maxAmmo = baseStats.maxAmmo + bonusCap;
+
+        currentAmmo = effectiveStats.maxAmmo;
+        updateHUD();
+        updateCraftingDisplay();
+    }
+
+    function setupCraftingUI() {
+        const container = document.getElementById('attachment-list-container');
+        attachmentsPool.forEach(att => {
+            const btn = document.createElement('button');
+            btn.className = 'att-btn';
+            btn.innerText = `[${att.type}] ${att.name}`;
+            btn.onclick = () => {
+                equippedAttachments[att.type] = att;
+                recalculateStats();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function updateCraftingDisplay() {
+        document.getElementById('val-dmg').innerText = Math.round(effectiveStats.damage);
+        document.getElementById('val-fr').innerText = `${(1/effectiveStats.fireRate).toFixed(1)}/s`;
+        document.getElementById('val-rec').innerText = effectiveStats.recoil.toFixed(2);
+        document.getElementById('val-vel').innerText = `${Math.round(effectiveStats.velocity)}m/s`;
+        document.getElementById('val-cap').innerText = effectiveStats.maxAmmo;
+
+        document.getElementById('bar-dmg').style.width = `${Math.min(100, effectiveStats.damage)}%`;
+        document.getElementById('bar-fr').style.width = `${Math.min(100, (1/effectiveStats.fireRate)*10)}%`;
+        document.getElementById('bar-rec').style.width = `${Math.max(10, (1 - effectiveStats.recoil)*100)}%`;
+    }
+
+    function updateHUD() {
+        document.getElementById('ammo-display').innerText = `${currentAmmo} / ${effectiveStats.maxAmmo}`;
+        document.getElementById('boss-hp-fill').style.width = `${(bossCurrentHP / bossMaxHP) * 100}%`;
+        document.getElementById('boss-hp-text').innerText = `${Math.ceil(bossCurrentHP)} / ${bossMaxHP} HP`;
+    }
+
+    function levelCleared() {
+        currentLevel++;
+        document.getElementById('level-banner').innerText = `LEVEL ${currentLevel}`;
+        bossMaxHP = Math.round(baseBossHP * (1 + (currentLevel - 1) * 0.45));
+        bossCurrentHP = bossMaxHP;
+        bossSpeed += 0.01;
+        isEnraged = false;
+        bossBodyMesh.material.color.setHex(0xff00ff);
+        boss.position.set(0, 0, 15);
+        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: PATROL';
+        updateHUD();
+    }
+
+    function startRandomChallenge() {
+        challengeActive = true;
+        challengeGoal = 3;
+        challengeProgress = 0;
+        document.getElementById('challenge-widget').style.display = 'block';
+        document.getElementById('challenge-progress').innerText = '0 / 3';
+    }
+
+    function completeChallenge() {
+        challengeActive = false;
+        document.getElementById('challenge-widget').style.display = 'none';
+        overdriveBuff = 2.0;
+        document.getElementById('reward-notification').innerText = 'BUFF ACTIVE: OVERDRIVE 2X DAMAGE!';
+        setTimeout(() => {
+            overdriveBuff = 1.0;
+            document.getElementById('reward-notification').innerText = '';
+        }, 12000);
+    }
+</script>
+</body>
+</html>
