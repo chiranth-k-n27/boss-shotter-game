@@ -6,7 +6,7 @@
     <title>3D Mobile Shooter - Modular Weapon Crafting & Boss FSM</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #05070a; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0d1321; font-family: 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
         /* HUD Overlay */
@@ -14,45 +14,45 @@
         .hud-element { pointer-events: auto; }
 
         /* Level Banner */
-        #level-banner { position: absolute; top: 20px; left: 20px; color: #00f0ff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+        #level-banner { position: absolute; top: 20px; left: 20px; color: #00f0ff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(0,240,255,0.8); }
 
         /* Boss Health Bar */
-        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 360px; background: rgba(10, 15, 25, 0.85); border: 2px solid #2a3548; border-radius: 8px; padding: 8px; text-align: center; }
-        #boss-hp-bar { width: 100%; height: 16px; background: #1a202c; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 360px; background: rgba(10, 15, 25, 0.9); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
+        #boss-hp-bar { width: 100%; height: 18px; background: #1a202c; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
         #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff3366, #ff0033); transition: width 0.15s ease-out; }
-        #boss-hp-text { color: #fff; font-size: 13px; font-weight: 600; }
+        #boss-hp-text { color: #fff; font-size: 14px; font-weight: bold; }
         #boss-phase-badge { color: #ffcc00; font-size: 14px; font-weight: bold; margin-top: 2px; }
 
-        /* Boss Directional Arrow Indicator */
-        #boss-arrow-indicator { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: #ffcc00; font-weight: bold; font-size: 16px; text-shadow: 0 0 8px #000; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; border: 1px solid #ffcc00; }
+        /* Boss Distance Indicator */
+        #boss-arrow-indicator { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #ffcc00; font-weight: bold; font-size: 16px; text-shadow: 0 0 8px #000; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 20px; border: 2px solid #ffcc00; }
 
         /* Challenge Widget */
-        #challenge-widget { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.85); border: 1px solid #00aaff; border-radius: 6px; padding: 6px 16px; color: #fff; font-size: 14px; display: none; text-align: center; }
-        #reward-notification { position: absolute; bottom: 120px; left: 20px; color: #00ff88; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,136,0.6); }
+        #challenge-widget { position: absolute; top: 135px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.9); border: 2px solid #00aaff; border-radius: 6px; padding: 6px 16px; color: #fff; font-size: 14px; display: none; text-align: center; }
+        #reward-notification { position: absolute; bottom: 120px; left: 20px; color: #00ff88; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,136,0.8); }
 
         /* Crosshair & Ammo */
-        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; border: 2px solid rgba(0,0,0,0.5); }
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #00f0ff; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 8px #00f0ff; }
         #ammo-display { position: absolute; bottom: 30px; right: 30px; color: #fff; font-size: 32px; font-weight: bold; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
 
         /* Touch Buttons */
-        .btn-action { position: absolute; width: 70px; height: 70px; background: rgba(20, 30, 50, 0.8); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: bold; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 12px rgba(0,170,255,0.4); }
+        .btn-action { position: absolute; width: 70px; height: 70px; background: rgba(20, 30, 50, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: bold; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 12px rgba(0,170,255,0.4); }
         .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.95); }
-        #btn-fire { bottom: 40px; right: 120px; width: 85px; height: 85px; background: rgba(180, 20, 40, 0.85); border-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.5); }
+        #btn-fire { bottom: 40px; right: 120px; width: 85px; height: 85px; background: rgba(220, 20, 50, 0.9); border-color: #ff3366; box-shadow: 0 0 20px rgba(255,51,102,0.7); }
         #btn-ads { bottom: 135px; right: 30px; }
         #btn-reload { bottom: 135px; right: 110px; }
-        #btn-lockon { bottom: 215px; right: 30px; width: auto; height: 40px; padding: 0 14px; border-radius: 20px; font-size: 12px; background: rgba(255, 150, 0, 0.85); border-color: #ffaa00; }
+        #btn-lockon { bottom: 215px; right: 30px; width: auto; height: 40px; padding: 0 16px; border-radius: 20px; font-size: 13px; background: rgba(255, 150, 0, 0.9); border-color: #ffaa00; }
         #btn-craft { bottom: 40px; left: 30px; width: auto; height: 45px; padding: 0 20px; border-radius: 8px; background: rgba(0, 150, 255, 0.85); }
 
         /* Floating Damage Text Container */
         #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .floating-damage { position: absolute; font-weight: 800; font-size: 26px; text-shadow: 0 0 6px #000; animation: floatUp 0.8s ease-out forwards; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
+        .floating-damage { position: absolute; font-weight: 900; font-size: 28px; text-shadow: 0 0 8px #000; animation: floatUp 0.8s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-45px) scale(1.3); } }
 
         /* Floating Boss Overhead Marker */
-        #boss-marker { position: absolute; color: #ff0055; font-size: 14px; font-weight: 800; text-shadow: 0 0 8px #000; pointer-events: none; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); padding: 6px 14px; border-radius: 12px; border: 2px solid #ff0055; }
+        #boss-marker { position: absolute; color: #ffff00; font-size: 16px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); padding: 8px 16px; border-radius: 16px; border: 2px solid #ff0055; box-shadow: 0 0 15px rgba(255,0,85,0.6); }
 
         /* Crafting UI Panel */
-        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 750px; height: 80%; max-height: 500px; background: rgba(10, 14, 22, 0.95); border: 2px solid #00f0ff; border-radius: 12px; z-index: 100; display: none; padding: 20px; box-shadow: 0 0 30px rgba(0,240,255,0.3); color: #fff; }
+        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 750px; height: 80%; max-height: 500px; background: rgba(10, 14, 22, 0.95); border: 2px solid #00f0ff; border-radius: 12px; z-index: 100; display: none; padding: 20px; box-shadow: 0 0 30px rgba(0,240,255,0.4); color: #fff; }
         .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2638; padding-bottom: 10px; margin-bottom: 15px; }
         .crafting-body { display: flex; height: calc(100% - 110px); gap: 20px; }
         .attachment-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
@@ -84,7 +84,7 @@
 
         <div id="boss-arrow-indicator">
             <span id="arrow-icon">⬆️</span>
-            <span id="arrow-text">BOSS DISTANCE: 12m</span>
+            <span id="arrow-text">BOSS DISTANCE: 10m</span>
         </div>
 
         <div id="challenge-widget">
@@ -142,7 +142,7 @@
     // Game Core Engine
     let scene, camera, renderer;
     let player, cameraPivot, weaponMesh;
-    let boss, bossBodyMesh, bossHeadMesh, bossArmorMesh, attackIndicatorMesh, bossLight;
+    let boss, bossBodyMesh, bossHeadMesh, bossArmorMesh, attackIndicatorMesh;
     
     // Game State
     let currentLevel = 1;
@@ -182,44 +182,28 @@
     function init() {
         // Scene setup
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0f1d);
-        scene.fog = new THREE.FogExp2(0x0a0f1d, 0.012);
+        scene.background = new THREE.Color(0x0d1321);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Lighting
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
-        scene.add(hemiLight);
+        // Environment Floor Grid Lines
+        const grid = new THREE.GridHelper(100, 40, 0x00f0ff, 0x1f293d);
+        grid.position.y = 0.01;
+        scene.add(grid);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(20, 50, 20);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-
-        // Environment Ground
         const floorGeo = new THREE.PlaneGeometry(100, 100);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1f293d, roughness: 0.7 });
+        const floorMat = new THREE.MeshBasicMaterial({ color: 0x131b2e });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Cover Blocks
-        const boxGeo = new THREE.BoxGeometry(5, 5, 5);
-        const boxMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-        [ [-12, 2.5, 5], [12, 2.5, 5], [-10, 2.5, -12], [10, 2.5, -12] ].forEach(pos => {
-            const box = new THREE.Mesh(boxGeo, boxMat);
-            box.position.set(...pos);
-            scene.add(box);
-        });
-
-        // Player Setup (Spawn at z = -12)
+        // Player Setup
         player = new THREE.Object3D();
-        player.position.set(0, 1.6, -12);
+        player.position.set(0, 1.6, -10);
         scene.add(player);
 
         cameraPivot = new THREE.Object3D();
@@ -228,18 +212,17 @@
 
         // Weapon Mesh Base
         const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.7);
-        const gunMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const gunMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
         weaponMesh = new THREE.Mesh(gunGeo, gunMat);
         weaponMesh.position.set(0.35, -0.3, 0.6);
         cameraPivot.add(weaponMesh);
 
-        // Boss Setup (Spawn directly at z = 2, right in front of player!)
+        // Boss Setup (High contrast unlit self-illuminated MeshBasicMaterial)
         createBoss();
 
-        // Turn Camera directly to face Boss
+        // Lock camera initially
         faceBoss();
 
-        // Recalculate Stats & UI
         recalculateStats();
         setupInputHandlers();
         setupCraftingUI();
@@ -249,41 +232,36 @@
 
     function createBoss() {
         boss = new THREE.Group();
-        boss.position.set(0, 0, 2); // Right in front of camera!
+        boss.position.set(0, 0, 2); // Positioned right in front of crosshair!
         scene.add(boss);
 
-        // Bright Glowing Boss Beacon Light
-        bossLight = new THREE.PointLight(0xff00ff, 4, 30);
-        bossLight.position.set(0, 5, 0);
-        boss.add(bossLight);
-
-        // Body (Giant Cylinder - 1.0x Damage)
-        const bodyGeo = new THREE.CylinderGeometry(2.5, 2.5, 5.5, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0x440044, roughness: 0.3 });
+        // Body (Vibrant Glowing Magenta - Unlit MeshBasicMaterial)
+        const bodyGeo = new THREE.CylinderGeometry(2.8, 2.8, 6.0, 16);
+        const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
         bossBodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-        bossBodyMesh.position.y = 2.75;
+        bossBodyMesh.position.y = 3.0;
         bossBodyMesh.userData = { type: 'Body' };
         boss.add(bossBodyMesh);
 
-        // Head Weak Point (Giant Yellow Sphere - 2.5x CRIT Damage)
-        const headGeo = new THREE.SphereGeometry(1.8, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0x666600, roughness: 0.2 });
+        // Head Weak Point (Bright Glowing Neon Yellow - 2.5x CRIT Damage)
+        const headGeo = new THREE.SphereGeometry(2.0, 16, 16);
+        const headMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
         bossHeadMesh = new THREE.Mesh(headGeo, headMat);
-        bossHeadMesh.position.y = 7.0;
+        bossHeadMesh.position.y = 7.5;
         bossHeadMesh.userData = { type: 'Head' };
         boss.add(bossHeadMesh);
 
-        // Chest Armor Plate (0.5x Damage)
-        const armorGeo = new THREE.BoxGeometry(2.8, 3.0, 0.6);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1 });
+        // Chest Armor Plate (Vibrant Cyan/Black Plate - 0.5x Damage)
+        const armorGeo = new THREE.BoxGeometry(3.2, 3.2, 0.6);
+        const armorMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
         bossArmorMesh = new THREE.Mesh(armorGeo, armorMat);
-        bossArmorMesh.position.set(0, 2.8, -2.6);
+        bossArmorMesh.position.set(0, 3.0, -2.9);
         bossArmorMesh.userData = { type: 'Armor' };
         boss.add(bossArmorMesh);
 
         // Telegraph Ring
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.7 });
         attackIndicatorMesh = new THREE.Mesh(ringGeo, ringMat);
         attackIndicatorMesh.position.y = 0.05;
         boss.add(attackIndicatorMesh);
@@ -409,7 +387,7 @@
             const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
             const y = (-proj.y * 0.5 + 0.5) * window.innerHeight;
             marker.style.left = `${x}px`;
-            marker.style.top = `${y - 45}px`;
+            marker.style.top = `${y - 50}px`;
             marker.style.display = 'block';
         } else {
             marker.style.display = 'none';
@@ -451,8 +429,7 @@
             // Phase 2 Enrage Check (50% HP)
             if (!isEnraged && bossCurrentHP <= bossMaxHP * 0.5) {
                 isEnraged = true;
-                bossBodyMesh.material.color.setHex(0xff0033);
-                bossLight.color.setHex(0xff0033);
+                bossBodyMesh.material.color.setHex(0xff0000);
                 bossSpeed *= 1.6;
                 document.getElementById('boss-phase-badge').innerText = 'PHASE 2: ENRAGED!';
             }
@@ -492,7 +469,7 @@
         const elem = document.createElement('div');
         elem.className = 'floating-damage';
         elem.innerText = type === 'Head' ? `CRIT! ${Math.round(dmg)}` : Math.round(dmg);
-        elem.style.color = type === 'Head' ? '#ffff00' : (type === 'Armor' ? '#a0aec0' : '#ffffff');
+        elem.style.color = type === 'Head' ? '#ffff00' : (type === 'Armor' ? '#00ffff' : '#ffffff');
 
         const proj = worldPos.clone().project(camera);
         const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
@@ -567,7 +544,6 @@
         bossSpeed += 0.01;
         isEnraged = false;
         bossBodyMesh.material.color.setHex(0xff00ff);
-        bossLight.color.setHex(0xff00ff);
         boss.position.set(0, 0, 2);
         document.getElementById('boss-phase-badge').innerText = 'PHASE 1: PATROL';
         faceBoss();
