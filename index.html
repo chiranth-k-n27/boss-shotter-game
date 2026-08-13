@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire 3D Boss Battle - Player Health & Fixed Camera</title>
+    <title>Free Fire 3D Boss Battle - Infinite Map & Stone Cover Collisions</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -178,13 +178,15 @@
     let playerGroup, playerBody, gunMesh;
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
+    let rockObstacles = []; // Collidable Stone Objects & Cover
 
-    // Camera Modes: TPV (Third Person - Behind & Above Head), FPV (First Person - At Head/Eyes), CINEMATIC
+    // Camera Modes: TPV, FPV, CINEMATIC
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
     let currentCamModeIndex = 0;
 
-    // Player HP State
+    // Player State
     let playerMaxHP = 100, playerCurrentHP = 100;
+    let playerRadius = 0.6; // Player collision radius
 
     // Game Progression
     let currentLevel = 1;
@@ -222,10 +224,12 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
+        scene.background = new THREE.Color(0x87ceeb); // Sky blue
+        
+        // 1. Infinite Distance Fog: Seamlessly blends infinite ground plane into horizon sky!
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.0035);
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -236,27 +240,25 @@
         scene.add(ambientLight);
 
         const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
-        sunLight.position.set(30, 60, 30);
+        sunLight.position.set(50, 100, 50);
         sunLight.castShadow = true;
         scene.add(sunLight);
 
-        // Ground Terrain
-        const groundGeo = new THREE.PlaneGeometry(150, 150);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4fb04f, roughness: 0.8 });
+        // 2. Infinite Ground Plane (2000m x 2000m extended battleground)
+        const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4fb04f, roughness: 0.85 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Cover Rocks
-        const rockGeo = new THREE.DodecahedronGeometry(3);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.9 });
-        [ [-12, 2.5, 5], [12, 2.5, 5], [-10, 2.5, -12], [10, 2.5, -12] ].forEach(pos => {
-            const rock = new THREE.Mesh(rockGeo, rockMat);
-            rock.position.set(...pos);
-            rock.castShadow = true;
-            scene.add(rock);
-        });
+        // Endless Grid Terrain Lines extending into horizon
+        const infiniteGrid = new THREE.GridHelper(2000, 100, 0xffffff, 0x388e3c);
+        infiniteGrid.position.y = 0.02;
+        scene.add(infiniteGrid);
+
+        // 3. Create Solid Cover Stones / Rocks with Physical Bounding Collisions
+        createStoneCoverStructures();
 
         createPlayerHero();
         createBossTitan();
@@ -268,6 +270,34 @@
         setupCraftingUI();
 
         setInterval(startRandomChallenge, 30000);
+    }
+
+    function createStoneCoverStructures() {
+        const rockPositions = [
+            [-12, 2.5, 5, 3.2],   // Left front stone (x, y, z, radius)
+            [12, 2.5, 5, 3.2],    // Right front stone
+            [-15, 3.0, -10, 3.8], // Left rear stone
+            [15, 3.0, -10, 3.8],  // Right rear stone
+            [0, 2.5, -20, 3.0],   // Spawn area cover stone
+            [-25, 4.0, 20, 4.5],  // Outskirt giant stone 1
+            [25, 4.0, 20, 4.5]    // Outskirt giant stone 2
+        ];
+
+        const rockGeo = new THREE.DodecahedronGeometry(1);
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, metalness: 0.1 });
+
+        rockPositions.forEach(([x, y, z, r]) => {
+            const rock = new THREE.Mesh(rockGeo, rockMat);
+            rock.position.set(x, y, z);
+            rock.scale.set(r, r, r);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
+            rock.userData = { type: 'Rock', radius: r };
+            scene.add(rock);
+
+            // Add to physical collision & bullet cover list
+            rockObstacles.push({ mesh: rock, pos: new THREE.Vector3(x, 0, z), radius: r });
+        });
     }
 
     function createPlayerHero() {
@@ -283,11 +313,11 @@
         playerBody.castShadow = true;
         playerGroup.add(playerBody);
 
-        // Player Head (Yellow Helmet)
+        // Player Head
         const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
         const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 2.1; // Head height at Y = 2.1
+        head.position.y = 2.1;
         playerGroup.add(head);
 
         // Player Gun
@@ -353,7 +383,6 @@
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
 
-        // Hide player model only in FPV mode so head doesn't block camera
         playerGroup.children.forEach(c => c.visible = (mode !== 'FPV'));
     }
 
@@ -476,7 +505,6 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // WASD Keyboard Inputs
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -486,8 +514,7 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // 1. UNMIRRORED WASD & Joystick Movement Math:
-        // W = Move forward facing cameraYaw, S = Move backward, D = Strafe right, A = Strafe left
+        // Movement Vectors Math
         const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
         const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
 
@@ -497,22 +524,35 @@
         const rightZ = -Math.sin(cameraYaw);
 
         const speed = 0.18;
-        const moveX = (rightX * rawX) + (forwardX * rawY);
-        const moveZ = (rightZ * rawX) + (forwardZ * rawY);
+        let deltaX = (rightX * rawX) + (forwardX * rawY);
+        let deltaZ = (rightZ * rawX) + (forwardZ * rawY);
 
-        playerGroup.position.x += moveX * speed;
-        playerGroup.position.z += moveZ * speed;
+        // Prospective New Player Position
+        let nextX = playerGroup.position.x + deltaX * speed;
+        let nextZ = playerGroup.position.z + deltaZ * speed;
 
-        // Player Model rotates to face camera heading
+        // Physical Collision Detection against Cover Stones
+        rockObstacles.forEach(rock => {
+            const dist = Math.hypot(nextX - rock.pos.x, nextZ - rock.pos.z);
+            const minDist = rock.radius + playerRadius;
+            if (dist < minDist) {
+                // Block/Slide along obstacle normal!
+                const angle = Math.atan2(nextZ - rock.pos.z, nextX - rock.pos.x);
+                nextX = rock.pos.x + Math.cos(angle) * minDist;
+                nextZ = rock.pos.z + Math.sin(angle) * minDist;
+            }
+        });
+
+        playerGroup.position.x = nextX;
+        playerGroup.position.z = nextZ;
         playerGroup.rotation.y = cameraYaw;
 
-        // 2. Exact Camera View Positioning:
+        // Camera Positioning Logic
         const mode = cameraModes[currentCamModeIndex];
 
         if (mode === 'TPV') {
-            // TPV: Camera positioned slightly behind and above player's head (Head Y = 2.1)
             const distance = isADS ? 2.2 : 3.8;
-            const height = isADS ? 2.3 : 2.7; // Slightly above head level
+            const height = isADS ? 2.3 : 2.7;
 
             const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance * Math.cos(cameraPitch);
             const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance * Math.cos(cameraPitch);
@@ -520,13 +560,11 @@
 
             camera.position.set(camX, camY, camZ);
             
-            // Look target at shoulder / crosshair ahead
             const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 15;
             const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 15;
             camera.lookAt(targetX, playerGroup.position.y + 2.0, targetZ);
         }
         else if (mode === 'FPV') {
-            // FPV: Camera placed directly inside player's head / eyes (Y = 2.1)
             camera.position.set(
                 playerGroup.position.x,
                 playerGroup.position.y + 2.1,
@@ -538,28 +576,42 @@
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'CINEMATIC') {
-            // Cinematic Overview Camera
             camera.position.set(0, 18, -25);
             camera.lookAt(bossGroup.position.x, bossGroup.position.y + 3.0, bossGroup.position.z);
         }
 
         checkAimLock();
 
-        // Auto Fire Combat
+        // Combat Firing
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // Boss AI Logic & Player Damage
+        // Boss AI Logic & Rock Collisions
         if (bossCurrentHP > 0) {
             const dist = playerGroup.position.distanceTo(bossGroup.position);
             bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
 
             if (!isAttacking) {
                 if (dist > 7) {
-                    bossGroup.position.addScaledVector(playerGroup.position.clone().sub(bossGroup.position).normalize(), bossSpeed);
+                    const bossDir = playerGroup.position.clone().sub(bossGroup.position).normalize();
+                    let bossNextX = bossGroup.position.x + bossDir.x * bossSpeed;
+                    let bossNextZ = bossGroup.position.z + bossDir.z * bossSpeed;
+
+                    // Boss Obstacle Collision
+                    rockObstacles.forEach(rock => {
+                        const bDist = Math.hypot(bossNextX - rock.pos.x, bossNextZ - rock.pos.z);
+                        if (bDist < rock.radius + 2.5) {
+                            const angle = Math.atan2(bossNextZ - rock.pos.z, bossNextX - rock.pos.x);
+                            bossNextX = rock.pos.x + Math.cos(angle) * (rock.radius + 2.5);
+                            bossNextZ = rock.pos.z + Math.sin(angle) * (rock.radius + 2.5);
+                        }
+                    });
+
+                    bossGroup.position.x = bossNextX;
+                    bossGroup.position.z = bossNextZ;
                 } else {
                     executeBossAttack();
                 }
@@ -591,10 +643,21 @@
 
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(new THREE.Vector2(0, 0.1), camera);
-        const intersects = raycaster.intersectObjects(hitboxes);
+        
+        // Raycast against both Boss hitboxes AND Rock Cover Meshes!
+        const rockMeshes = rockObstacles.map(r => r.mesh);
+        const allTargets = [...hitboxes, ...rockMeshes];
+        const intersects = raycaster.intersectObjects(allTargets);
 
         if (intersects.length > 0) {
             const hitObj = intersects[0].object;
+
+            // If bullet hits a stone cover structure first, stone blocks bullet!
+            if (hitObj.userData.type === 'Rock') {
+                spawnDamageText(0, 'Block', intersects[0].point);
+                return;
+            }
+
             const hitType = hitObj.userData.type || 'Body';
             let mult = 1.0;
             if (hitType === 'Head') mult = 2.5;
@@ -637,7 +700,6 @@
                 isAttacking = false;
                 document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL & APPROACH';
                 
-                // Damage Player if within slam radius
                 const dist = playerGroup.position.distanceTo(bossGroup.position);
                 if (dist < 8) {
                     damagePlayer(30);
@@ -651,7 +713,6 @@
         updateHUD();
 
         if (playerCurrentHP <= 0) {
-            // Player Respawn Routine
             setTimeout(() => {
                 playerCurrentHP = playerMaxHP;
                 playerGroup.position.set(0, 0, -10);
@@ -674,8 +735,14 @@
     function spawnDamageText(dmg, type, worldPos) {
         const elem = document.createElement('div');
         elem.className = 'floating-damage';
-        elem.innerText = type === 'Head' ? `CRIT! ${Math.round(dmg)}` : Math.round(dmg);
-        elem.style.color = type === 'Head' ? '#facc15' : (type === 'Armor' ? '#94a3b8' : '#ef4444');
+        if (type === 'Block') {
+            elem.innerText = 'COVER BLOCKED!';
+            elem.style.color = '#94a3b8';
+            elem.style.fontSize = '20px';
+        } else {
+            elem.innerText = type === 'Head' ? `CRIT! ${Math.round(dmg)}` : Math.round(dmg);
+            elem.style.color = type === 'Head' ? '#facc15' : (type === 'Armor' ? '#94a3b8' : '#ef4444');
+        }
 
         const proj = worldPos.clone().project(camera);
         const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
