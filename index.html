@@ -3,67 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Mobile Shooter - Modular Weapon Crafting & Boss FSM</title>
+    <title>Free Fire 3D Boss Battle - Modular Weapon Crafting</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0d1321; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; font-family: 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
         /* HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Level Banner */
-        #level-banner { position: absolute; top: 20px; left: 20px; color: #00f0ff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(0,240,255,0.8); }
+        /* Level Banner & Score */
+        #level-banner { position: absolute; top: 15px; left: 20px; color: #ffcc00; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px rgba(255,204,0,0.8), 2px 2px 4px #000; }
 
-        /* Boss Health Bar */
-        #boss-hp-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 360px; background: rgba(10, 15, 25, 0.9); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
-        #boss-hp-bar { width: 100%; height: 18px; background: #1a202c; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
-        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff3366, #ff0033); transition: width 0.15s ease-out; }
-        #boss-hp-text { color: #fff; font-size: 14px; font-weight: bold; }
-        #boss-phase-badge { color: #ffcc00; font-size: 14px; font-weight: bold; margin-top: 2px; }
+        /* Free Fire Style Boss Health Bar */
+        #boss-hp-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: rgba(15, 20, 30, 0.9); border: 2px solid #ff0055; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 0 20px rgba(255,0,85,0.5); }
+        #boss-title { color: #ff0055; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        #boss-hp-bar { width: 100%; height: 20px; background: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #374151; margin-bottom: 4px; }
+        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff5500); transition: width 0.15s ease-out; }
+        #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; }
+        #boss-phase-badge { color: #ffcc00; font-size: 13px; font-weight: bold; margin-top: 2px; }
 
-        /* Boss Distance Indicator */
-        #boss-arrow-indicator { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #ffcc00; font-weight: bold; font-size: 16px; text-shadow: 0 0 8px #000; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 20px; border: 2px solid #ffcc00; }
+        /* Free Fire Dynamic Red Aim-Assist Crosshair */
+        #crosshair-container { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; pointer-events: none; }
+        #crosshair-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: #ffffff; border-radius: 50%; border: 2px solid #000; transition: background 0.1s, transform 0.1s; }
+        #crosshair-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; transition: border-color 0.1s, transform 0.1s; }
+        #crosshair-container.aim-locked #crosshair-dot { background: #ff0000; transform: translate(-50%, -50%) scale(1.4); box-shadow: 0 0 10px #ff0000; }
+        #crosshair-container.aim-locked #crosshair-ring { border-color: #ff0000; transform: scale(1.1); box-shadow: 0 0 15px rgba(255,0,0,0.8); }
+
+        /* Ammo Display */
+        #ammo-display { position: absolute; bottom: 35px; right: 35px; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 0 0 12px #000, 2px 2px 4px #000; }
+        #ammo-label { font-size: 14px; color: #ffcc00; text-transform: uppercase; }
+
+        /* Free Fire Style Mobile Action Buttons */
+        .btn-action { position: absolute; width: 72px; height: 72px; background: rgba(20, 30, 48, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 15px rgba(0,170,255,0.4); text-transform: uppercase; }
+        .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.92); }
+        #btn-fire { bottom: 45px; right: 130px; width: 90px; height: 90px; background: rgba(220, 20, 50, 0.9); border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.7); font-size: 16px; }
+        #btn-ads { bottom: 145px; right: 35px; background: rgba(0, 150, 255, 0.85); }
+        #btn-reload { bottom: 145px; right: 120px; }
+        #btn-lockon { bottom: 225px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(255, 165, 0, 0.9); border-color: #ffaa00; }
+        #btn-craft { bottom: 45px; left: 35px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(0, 200, 255, 0.9); border-color: #00f0ff; font-size: 14px; }
+
+        /* Damage Popups */
+        #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .floating-damage { position: absolute; font-weight: 900; font-size: 32px; text-shadow: 0 0 8px #000, 2px 2px 4px #000; animation: floatUp 0.75s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-30px) scale(1.3); } 100% { opacity: 0; transform: translateY(-60px) scale(1); } }
+
+        /* Overhead Boss Tag */
+        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(220,0,85,0.9); padding: 4px 12px; border-radius: 12px; border: 2px solid #ffffff; box-shadow: 0 0 15px rgba(255,0,85,0.8); }
 
         /* Challenge Widget */
-        #challenge-widget { position: absolute; top: 135px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.9); border: 2px solid #00aaff; border-radius: 6px; padding: 6px 16px; color: #fff; font-size: 14px; display: none; text-align: center; }
-        #reward-notification { position: absolute; bottom: 120px; left: 20px; color: #00ff88; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,136,0.8); }
+        #challenge-widget { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 40, 80, 0.95); border: 2px solid #00f0ff; border-radius: 8px; padding: 8px 20px; color: #fff; font-size: 14px; display: none; text-align: center; }
 
-        /* Crosshair & Ammo */
-        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #00f0ff; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 8px #00f0ff; }
-        #ammo-display { position: absolute; bottom: 30px; right: 30px; color: #fff; font-size: 32px; font-weight: bold; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
-
-        /* Touch Buttons */
-        .btn-action { position: absolute; width: 70px; height: 70px; background: rgba(20, 30, 50, 0.85); border: 2px solid #00aaff; border-radius: 50%; color: #fff; font-weight: bold; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 12px rgba(0,170,255,0.4); }
-        .btn-action:active { background: rgba(0, 170, 255, 0.9); transform: scale(0.95); }
-        #btn-fire { bottom: 40px; right: 120px; width: 85px; height: 85px; background: rgba(220, 20, 50, 0.9); border-color: #ff3366; box-shadow: 0 0 20px rgba(255,51,102,0.7); }
-        #btn-ads { bottom: 135px; right: 30px; }
-        #btn-reload { bottom: 135px; right: 110px; }
-        #btn-lockon { bottom: 215px; right: 30px; width: auto; height: 40px; padding: 0 16px; border-radius: 20px; font-size: 13px; background: rgba(255, 150, 0, 0.9); border-color: #ffaa00; }
-        #btn-craft { bottom: 40px; left: 30px; width: auto; height: 45px; padding: 0 20px; border-radius: 8px; background: rgba(0, 150, 255, 0.85); }
-
-        /* Floating Damage Text Container */
-        #damage-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .floating-damage { position: absolute; font-weight: 900; font-size: 28px; text-shadow: 0 0 8px #000; animation: floatUp 0.8s ease-out forwards; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-45px) scale(1.3); } }
-
-        /* Floating Boss Overhead Marker */
-        #boss-marker { position: absolute; color: #ffff00; font-size: 16px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); padding: 8px 16px; border-radius: 16px; border: 2px solid #ff0055; box-shadow: 0 0 15px rgba(255,0,85,0.6); }
-
-        /* Crafting UI Panel */
-        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 750px; height: 80%; max-height: 500px; background: rgba(10, 14, 22, 0.95); border: 2px solid #00f0ff; border-radius: 12px; z-index: 100; display: none; padding: 20px; box-shadow: 0 0 30px rgba(0,240,255,0.4); color: #fff; }
-        .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2638; padding-bottom: 10px; margin-bottom: 15px; }
-        .crafting-body { display: flex; height: calc(100% - 110px); gap: 20px; }
+        /* Crafting Bench Modal */
+        #crafting-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 780px; height: 82%; max-height: 520px; background: rgba(10, 15, 25, 0.96); border: 2px solid #00f0ff; border-radius: 14px; z-index: 100; display: none; padding: 22px; box-shadow: 0 0 35px rgba(0,240,255,0.4); color: #fff; }
+        .crafting-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f293d; padding-bottom: 12px; margin-bottom: 16px; }
+        .crafting-body { display: flex; height: calc(100% - 115px); gap: 20px; }
         .attachment-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .att-btn { background: rgba(20, 30, 48, 0.8); border: 1px solid #2a3e5c; padding: 10px; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s; }
-        .att-btn:hover, .att-btn.active { background: rgba(0, 170, 255, 0.3); border-color: #00aaff; }
-        .stats-panel { flex: 1; background: rgba(15, 22, 34, 0.9); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-around; }
+        .att-btn { background: rgba(20, 30, 50, 0.85); border: 1px solid #2b3e5a; padding: 12px; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .att-btn:hover, .att-btn.active { background: rgba(0, 170, 255, 0.35); border-color: #00f0ff; }
+        .stats-panel { flex: 1; background: rgba(15, 23, 38, 0.95); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-around; }
         .stat-row { display: flex; flex-direction: column; gap: 4px; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 13px; color: #a0aec0; }
-        .stat-bar-bg { width: 100%; height: 8px; background: #1a202c; border-radius: 4px; overflow: hidden; }
-        .stat-bar-fill { height: 100%; background: #00f0ff; width: 50%; transition: width 0.2s; }
-        #btn-close-craft { align-self: center; margin-top: 15px; padding: 10px 30px; background: #00aaff; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8; font-weight: 700; }
+        .stat-bar-bg { width: 100%; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00f0ff, #0077ff); width: 50%; transition: width 0.2s; }
+        #btn-close-craft { align-self: center; margin-top: 15px; padding: 12px 36px; background: #00aaff; border: none; border-radius: 8px; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -71,20 +75,16 @@
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
-    <div id="boss-marker">⚠️ GIANT BOSS TITAN</div>
+    <div id="boss-tag">💥 TITAN BOSS</div>
 
     <div id="hud-container">
         <div id="level-banner">LEVEL 1</div>
 
         <div id="boss-hp-container">
+            <div id="boss-title">👹 TITAN MONSTER BOSS</div>
             <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
-            <div id="boss-hp-text">800 / 800 HP</div>
-            <div id="boss-phase-badge">PHASE 1: PATROL</div>
-        </div>
-
-        <div id="boss-arrow-indicator">
-            <span id="arrow-icon">⬆️</span>
-            <span id="arrow-text">BOSS DISTANCE: 10m</span>
+            <div id="boss-hp-text">1000 / 1000 HP</div>
+            <div id="boss-phase-badge">PHASE 1: PATROL & APPROACH</div>
         </div>
 
         <div id="challenge-widget">
@@ -92,15 +92,21 @@
             <div id="challenge-progress" style="font-weight: bold; margin-top: 2px;">0 / 3</div>
         </div>
 
-        <div id="reward-notification"></div>
+        <!-- Free Fire Red Aim Lock Crosshair -->
+        <div id="crosshair-container">
+            <div id="crosshair-ring"></div>
+            <div id="crosshair-dot"></div>
+        </div>
 
-        <div id="crosshair"></div>
-        <div id="ammo-display">30 / 30</div>
+        <div id="ammo-display">
+            <div id="ammo-label">AMMO</div>
+            <span id="ammo-val">30 / 30</span>
+        </div>
 
         <div id="btn-fire" class="hud-element btn-action">FIRE</div>
-        <div id="btn-ads" class="hud-element btn-action">ADS</div>
+        <div id="btn-ads" class="hud-element btn-action">SCOPE</div>
         <div id="btn-reload" class="hud-element btn-action">RELOAD</div>
-        <div id="btn-lockon" class="hud-element btn-action">🎯 FACE BOSS</div>
+        <div id="btn-lockon" class="hud-element btn-action">🎯 LOCK BOSS</div>
         <div id="btn-craft" class="hud-element btn-action">🛠️ WEAPON BENCH</div>
     </div>
 
@@ -108,13 +114,13 @@
     <div id="crafting-panel">
         <div class="crafting-header">
             <h2 id="custom-weapon-title" style="color: #00f0ff; font-size: 20px;">WEAPON: HEAVY PLASMA CANNON</h2>
-            <span style="font-size: 12px; color: #718096;">MODULAR CRAFTING BENCH</span>
+            <span style="font-size: 12px; color: #94a3b8;">FREE FIRE CRAFTING BENCH</span>
         </div>
         <div class="crafting-body">
             <div class="attachment-list" id="attachment-list-container"></div>
             <div class="stats-panel">
                 <div class="stat-row">
-                    <div class="stat-label"><span>DAMAGE</span><span id="val-dmg">25</span></div>
+                    <div class="stat-label"><span>DAMAGE</span><span id="val-dmg">35</span></div>
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-dmg"></div></div>
                 </div>
                 <div class="stat-row">
@@ -129,6 +135,7 @@
                     <div class="stat-label"><span>BULLET VELOCITY</span><span id="val-vel">100m/s</span></div>
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-vel"></div></div>
                 </div>
+                .
                 <div class="stat-row">
                     <div class="stat-label"><span>AMMO CAPACITY</span><span id="val-cap">30</span></div>
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-cap"></div></div>
@@ -139,40 +146,40 @@
     </div>
 
 <script>
-    // Game Core Engine
+    // Free Fire Style 3D Engine Setup
     let scene, camera, renderer;
-    let player, cameraPivot, weaponMesh;
-    let boss, bossBodyMesh, bossHeadMesh, bossArmorMesh, attackIndicatorMesh;
-    
-    // Game State
-    let currentLevel = 1;
-    let baseBossHP = 800;
-    let bossMaxHP = 800, bossCurrentHP = 800;
-    let bossSpeed = 0.08;
-    let isEnraged = false;
-    let isAttacking = false;
+    let playerGroup, playerBody, gunMesh;
+    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
+    let hitboxes = [];
 
-    // Player State
+    // Game Progression
+    let currentLevel = 1;
+    let baseBossHP = 1000;
+    let bossMaxHP = 1000, bossCurrentHP = 1000;
+    let bossSpeed = 0.07;
+    let isEnraged = false, isAttacking = false;
+
+    // Player State & Weapon
     let moveInput = { x: 0, y: 0 };
-    let lookInput = { x: 0, y: 0 };
+    let cameraYaw = 0, cameraPitch = 0.2;
     let isFiring = false, isADS = false, isReloading = false;
     let currentAmmo = 30, maxAmmo = 30;
     let lastFireTime = 0;
+    let isAimLocked = false;
 
     // Challenge System
     let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
     let overdriveBuff = 1.0;
 
-    // Attachments & Stats
-    const baseStats = { damage: 25, fireRate: 0.15, recoil: 0.5, velocity: 100, adsSpeed: 8, maxAmmo: 30 };
+    const baseStats = { damage: 35, fireRate: 0.15, recoil: 0.5, velocity: 120, adsSpeed: 8, maxAmmo: 30 };
     let effectiveStats = { ...baseStats };
 
     const attachmentsPool = [
         { id: 'b1', name: 'Heavy Plasma Barrel', type: 'Barrel', dmgMult: 1.4, velMult: 1.6, frOff: 0.04, color: 0x00f0ff },
         { id: 'b2', name: 'Rapid CQB Barrel', type: 'Barrel', dmgMult: 1.0, velMult: 1.0, frOff: -0.05, recRed: 0.2, color: 0xffcc00 },
-        { id: 's1', name: 'Thermal Sniper Scope', type: 'Scope', adsMult: 1.4, dmgMult: 1.15, color: 0xff3366 },
-        { id: 'st1', name: 'Heavy Armored Stock', type: 'Stock', recRed: 0.5, adsMult: 0.85, color: 0x3366ff },
-        { id: 'm1', name: 'Hyper Drum Mag 50R', type: 'Magazine', bonusCap: 20, color: 0x00ff88 }
+        { id: 's1', name: 'Thermal Scope 4X', type: 'Scope', adsMult: 1.5, dmgMult: 1.2, color: 0xff0055 },
+        { id: 'st1', name: 'Heavy Armored Stock', type: 'Stock', recRed: 0.5, adsMult: 0.85, color: 0x3b82f6 },
+        { id: 'm1', name: 'Extended Drum 50R', type: 'Magazine', bonusCap: 20, color: 0x10b981 }
     ];
     let equippedAttachments = { Barrel: attachmentsPool[0], Scope: null, Stock: null, Magazine: null };
 
@@ -180,47 +187,51 @@
     animate();
 
     function init() {
-        // Scene setup
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0d1321);
+        scene.background = new THREE.Color(0x87ceeb); // Bright Sunny Skybox!
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Environment Floor Grid Lines
-        const grid = new THREE.GridHelper(100, 40, 0x00f0ff, 0x1f293d);
-        grid.position.y = 0.01;
-        scene.add(grid);
+        // Sunlight Lighting (Bright & Vivid)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        scene.add(ambientLight);
 
-        const floorGeo = new THREE.PlaneGeometry(100, 100);
-        const floorMat = new THREE.MeshBasicMaterial({ color: 0x131b2e });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
+        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
+        sunLight.position.set(30, 60, 30);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        // Player Setup
-        player = new THREE.Object3D();
-        player.position.set(0, 1.6, -10);
-        scene.add(player);
+        // Free Fire Battleground Terrain (Green Grass Field)
+        const groundGeo = new THREE.PlaneGeometry(150, 150);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4fb04f, roughness: 0.8 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-        cameraPivot = new THREE.Object3D();
-        player.add(cameraPivot);
-        cameraPivot.add(camera);
+        // Cover Rocks & Obstacles
+        const rockGeo = new THREE.DodecahedronGeometry(3);
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.9 });
+        [ [-12, 2.5, 5], [12, 2.5, 5], [-10, 2.5, -12], [10, 2.5, -12] ].forEach(pos => {
+            const rock = new THREE.Mesh(rockGeo, rockMat);
+            rock.position.set(...pos);
+            rock.castShadow = true;
+            scene.add(rock);
+        });
 
-        // Weapon Mesh Base
-        const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.7);
-        const gunMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        weaponMesh = new THREE.Mesh(gunGeo, gunMat);
-        weaponMesh.position.set(0.35, -0.3, 0.6);
-        cameraPivot.add(weaponMesh);
+        // 1. Create Player Hero Avatar (Third Person View!)
+        createPlayerHero();
 
-        // Boss Setup (High contrast unlit self-illuminated MeshBasicMaterial)
-        createBoss();
+        // 2. Create Giant Boss Monster Titan
+        createBossTitan();
 
-        // Lock camera initially
+        // 3. Lock Camera to Face Boss
         faceBoss();
 
         recalculateStats();
@@ -230,54 +241,85 @@
         setInterval(startRandomChallenge, 30000);
     }
 
-    function createBoss() {
-        boss = new THREE.Group();
-        boss.position.set(0, 0, 2); // Positioned right in front of crosshair!
-        scene.add(boss);
+    function createPlayerHero() {
+        playerGroup = new THREE.Group();
+        playerGroup.position.set(0, 0, -10);
+        scene.add(playerGroup);
 
-        // Body (Vibrant Glowing Magenta - Unlit MeshBasicMaterial)
-        const bodyGeo = new THREE.CylinderGeometry(2.8, 2.8, 6.0, 16);
-        const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-        bossBodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-        bossBodyMesh.position.y = 3.0;
-        bossBodyMesh.userData = { type: 'Body' };
-        boss.add(bossBodyMesh);
+        // Player Torso (Blue Tactical Outfit)
+        const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
+        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8 });
+        playerBody = new THREE.Mesh(torsoGeo, torsoMat);
+        playerBody.position.y = 1.2;
+        playerBody.castShadow = true;
+        playerGroup.add(playerBody);
 
-        // Head Weak Point (Bright Glowing Neon Yellow - 2.5x CRIT Damage)
-        const headGeo = new THREE.SphereGeometry(2.0, 16, 16);
-        const headMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        bossHeadMesh = new THREE.Mesh(headGeo, headMat);
-        bossHeadMesh.position.y = 7.5;
-        bossHeadMesh.userData = { type: 'Head' };
-        boss.add(bossHeadMesh);
+        // Player Head
+        const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 2.0;
+        playerGroup.add(head);
 
-        // Chest Armor Plate (Vibrant Cyan/Black Plate - 0.5x Damage)
-        const armorGeo = new THREE.BoxGeometry(3.2, 3.2, 0.6);
-        const armorMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        bossArmorMesh = new THREE.Mesh(armorGeo, armorMat);
-        bossArmorMesh.position.set(0, 3.0, -2.9);
-        bossArmorMesh.userData = { type: 'Armor' };
-        boss.add(bossArmorMesh);
+        // Player Gun (Held in hand)
+        const gunGeo = new THREE.BoxGeometry(0.15, 0.2, 0.8);
+        const gunMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+        gunMesh = new THREE.Mesh(gunGeo, gunMat);
+        gunMesh.position.set(0.4, 1.2, 0.4);
+        playerGroup.add(gunMesh);
+    }
 
-        // Telegraph Ring
+    function createBossTitan() {
+        bossGroup = new THREE.Group();
+        bossGroup.position.set(0, 0, 15); // 25 meters in front of player
+        scene.add(bossGroup);
+
+        // Giant Boss Body (Crimson / Magenta Monster Titan)
+        const bodyGeo = new THREE.CylinderGeometry(2.5, 3.0, 7.0, 16);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+        bossBody = new THREE.Mesh(bodyGeo, bodyMat);
+        bossBody.position.y = 3.5;
+        bossBody.castShadow = true;
+        bossBody.userData = { type: 'Body' };
+        bossGroup.add(bossBody);
+        hitboxes.push(bossBody);
+
+        // Head Weakspot (Glowing Bright Yellow Skull - 2.5x Damage)
+        const headGeo = new THREE.SphereGeometry(2.2, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xeab308, emissive: 0xca8a04, roughness: 0.2 });
+        bossHead = new THREE.Mesh(headGeo, headMat);
+        bossHead.position.y = 8.5;
+        bossHead.castShadow = true;
+        bossHead.userData = { type: 'Head' };
+        bossGroup.add(bossHead);
+        hitboxes.push(bossHead);
+
+        // Chest Armor Plate (Dark Metal Shield - 0.5x Damage)
+        const armorGeo = new THREE.BoxGeometry(3.5, 3.5, 0.8);
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+        bossArmor = new THREE.Mesh(armorGeo, armorMat);
+        bossArmor.position.set(0, 3.5, -3.2);
+        bossArmor.userData = { type: 'Armor' };
+        bossGroup.add(bossArmor);
+        hitboxes.push(bossArmor);
+
+        // Telegraphed Attack Ring Indicator
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.7 });
-        attackIndicatorMesh = new THREE.Mesh(ringGeo, ringMat);
-        attackIndicatorMesh.position.y = 0.05;
-        boss.add(attackIndicatorMesh);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.6 });
+        attackIndicator = new THREE.Mesh(ringGeo, ringMat);
+        attackIndicator.position.y = 0.05;
+        bossGroup.add(attackIndicator);
     }
 
     function faceBoss() {
-        if (!boss || !player) return;
-        const dx = boss.position.x - player.position.x;
-        const dz = boss.position.z - player.position.z;
-        const angle = Math.atan2(dx, dz);
-        player.rotation.y = angle;
-        cameraPivot.rotation.x = 0.1;
+        if (!bossGroup || !playerGroup) return;
+        const dx = bossGroup.position.x - playerGroup.position.x;
+        const dz = bossGroup.position.z - playerGroup.position.z;
+        cameraYaw = Math.atan2(dx, dz);
+        cameraPitch = 0.15;
     }
 
     function setupInputHandlers() {
-        // Keyboard & Mouse
         const keys = {};
         window.addEventListener('keydown', e => {
             keys[e.code] = true;
@@ -287,8 +329,8 @@
 
         window.addEventListener('mousemove', e => {
             if (document.pointerLockElement === document.body) {
-                player.rotation.y -= e.movementX * 0.003;
-                cameraPivot.rotation.x = Math.max(-1.4, Math.min(1.4, cameraPivot.rotation.x - e.movementY * 0.003));
+                cameraYaw -= e.movementX * 0.003;
+                cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + e.movementY * 0.003));
             }
         });
 
@@ -298,7 +340,7 @@
         });
         window.addEventListener('mouseup', e => { if (e.button === 0) isFiring = false; });
 
-        // Touch Input
+        // Touch Look Controls
         let lastTouchPos = { x: 0, y: 0 };
         window.addEventListener('touchstart', e => {
             for (let t of e.touches) {
@@ -310,14 +352,14 @@
         window.addEventListener('touchmove', e => {
             for (let t of e.touches) {
                 if (t.clientX > window.innerWidth / 2) {
-                    player.rotation.y -= (t.clientX - lastTouchPos.x) * 0.005;
-                    cameraPivot.rotation.x = Math.max(-1.4, Math.min(1.4, cameraPivot.rotation.x - (t.clientY - lastTouchPos.y) * 0.005));
+                    cameraYaw -= (t.clientX - lastTouchPos.x) * 0.005;
+                    cameraPitch = Math.max(-0.5, Math.min(0.8, cameraPitch + (t.clientY - lastTouchPos.y) * 0.005));
                     lastTouchPos = { x: t.clientX, y: t.clientY };
                 }
             }
         });
 
-        // UI Buttons
+        // Mobile Buttons
         document.getElementById('btn-fire').addEventListener('touchstart', () => isFiring = true);
         document.getElementById('btn-fire').addEventListener('touchend', () => isFiring = false);
         document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
@@ -330,7 +372,6 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // Loop Keyboard Movement
         setInterval(() => {
             moveInput.x = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
             moveInput.y = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
@@ -340,57 +381,68 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Player Movement
-        const speed = 0.15;
-        player.translateX(moveInput.x * speed);
-        player.translateZ(-moveInput.y * speed);
+        // 1. Movement Logic
+        const speed = 0.16;
+        playerGroup.rotation.y = cameraYaw;
+        playerGroup.translateX(moveInput.x * speed);
+        playerGroup.translateZ(-moveInput.y * speed);
 
-        // ADS Zoom
-        const targetFOV = isADS ? 30 : 60;
-        camera.fov += (targetFOV - camera.fov) * 0.15;
-        camera.updateProjectionMatrix();
+        // 2. Third-Person Camera Follow Setup (Positioned behind Player)
+        const camDistance = isADS ? 2.5 : 7.0;
+        const camHeight = isADS ? 1.8 : 3.5;
+        
+        const offsetX = Math.sin(cameraYaw) * camDistance * Math.cos(cameraPitch);
+        const offsetZ = Math.cos(cameraYaw) * camDistance * Math.cos(cameraPitch);
+        const offsetY = Math.sin(cameraPitch) * camDistance + camHeight;
 
-        // Combat Auto-Fire
+        camera.position.set(
+            playerGroup.position.x - offsetX,
+            playerGroup.position.y + offsetY,
+            playerGroup.position.z - offsetZ
+        );
+        camera.lookAt(playerGroup.position.x, playerGroup.position.y + 2.0, playerGroup.position.z + 10);
+
+        // 3. Free Fire Aim Lock Check (Turns Crosshair RED when looking at Boss)
+        checkAimLock();
+
+        // 4. Auto Fire Combat
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // Boss AI & Tracking
+        // 5. Boss AI Logic
         if (bossCurrentHP > 0) {
-            const dist = player.position.distanceTo(boss.position);
-            boss.lookAt(player.position.x, boss.position.y, player.position.z);
+            const dist = playerGroup.position.distanceTo(bossGroup.position);
+            bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
 
             if (!isAttacking) {
-                if (dist > 6) {
-                    boss.position.addScaledVector(player.position.clone().sub(boss.position).normalize(), bossSpeed);
+                if (dist > 8) {
+                    bossGroup.position.addScaledVector(playerGroup.position.clone().sub(bossGroup.position).normalize(), bossSpeed);
                 } else {
                     executeBossAttack();
                 }
             }
 
-            updateBossHUDIndicators(dist);
+            updateBossTag(dist);
         }
 
         renderer.render(scene, camera);
     }
 
-    function updateBossHUDIndicators(dist) {
-        document.getElementById('arrow-text').innerText = `BOSS DISTANCE: ${Math.round(dist)}m`;
+    function checkAimLock() {
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(0, 0.1), camera);
+        const intersects = raycaster.intersectObjects(hitboxes);
 
-        const headPos = bossHeadMesh.getWorldPosition(new THREE.Vector3());
-        const proj = headPos.clone().project(camera);
-
-        const marker = document.getElementById('boss-marker');
-        if (proj.z < 1) {
-            const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
-            const y = (-proj.y * 0.5 + 0.5) * window.innerHeight;
-            marker.style.left = `${x}px`;
-            marker.style.top = `${y - 50}px`;
-            marker.style.display = 'block';
+        const crosshair = document.getElementById('crosshair-container');
+        if (intersects.length > 0) {
+            crosshair.classList.add('aim-locked');
+            isAimLocked = true;
         } else {
-            marker.style.display = 'none';
+            crosshair.classList.remove('aim-locked');
+            isAimLocked = false;
         }
     }
 
@@ -399,10 +451,9 @@
         currentAmmo--;
         updateHUD();
 
-        // Raycast Shot
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersects = raycaster.intersectObjects([bossBodyMesh, bossHeadMesh, bossArmorMesh]);
+        raycaster.setFromCamera(new THREE.Vector2(0, 0.1), camera);
+        const intersects = raycaster.intersectObjects(hitboxes);
 
         if (intersects.length > 0) {
             const hitObj = intersects[0].object;
@@ -417,19 +468,15 @@
             spawnDamageText(finalDamage, hitType, intersects[0].point);
             updateHUD();
 
-            // Challenge Progress
-            if (challengeActive) {
-                if (hitType === 'Head') {
-                    challengeProgress++;
-                    document.getElementById('challenge-progress').innerText = `${challengeProgress} / ${challengeGoal}`;
-                    if (challengeProgress >= challengeGoal) completeChallenge();
-                }
+            if (challengeActive && hitType === 'Head') {
+                challengeProgress++;
+                document.getElementById('challenge-progress').innerText = `${challengeProgress} / ${challengeGoal}`;
+                if (challengeProgress >= challengeGoal) completeChallenge();
             }
 
-            // Phase 2 Enrage Check (50% HP)
             if (!isEnraged && bossCurrentHP <= bossMaxHP * 0.5) {
                 isEnraged = true;
-                bossBodyMesh.material.color.setHex(0xff0000);
+                bossBody.material.color.setHex(0xd97706);
                 bossSpeed *= 1.6;
                 document.getElementById('boss-phase-badge').innerText = 'PHASE 2: ENRAGED!';
             }
@@ -444,13 +491,13 @@
 
         let scale = 0;
         const interval = setInterval(() => {
-            scale += 0.25;
-            attackIndicatorMesh.scale.set(scale, 1, scale);
-            if (scale >= 7) {
+            scale += 0.3;
+            attackIndicator.scale.set(scale, 1, scale);
+            if (scale >= 8) {
                 clearInterval(interval);
-                attackIndicatorMesh.scale.set(0.1, 1, 0.1);
+                attackIndicator.scale.set(0.1, 1, 0.1);
                 isAttacking = false;
-                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL';
+                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL & APPROACH';
             }
         }, 50);
     }
@@ -469,7 +516,7 @@
         const elem = document.createElement('div');
         elem.className = 'floating-damage';
         elem.innerText = type === 'Head' ? `CRIT! ${Math.round(dmg)}` : Math.round(dmg);
-        elem.style.color = type === 'Head' ? '#ffff00' : (type === 'Armor' ? '#00ffff' : '#ffffff');
+        elem.style.color = type === 'Head' ? '#facc15' : (type === 'Armor' ? '#94a3b8' : '#ef4444');
 
         const proj = worldPos.clone().project(camera);
         const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
@@ -478,7 +525,24 @@
         elem.style.top = `${y}px`;
 
         document.getElementById('damage-text-container').appendChild(elem);
-        setTimeout(() => elem.remove(), 800);
+        setTimeout(() => elem.remove(), 750);
+    }
+
+    function updateBossTag(dist) {
+        const headPos = bossHead.getWorldPosition(new THREE.Vector3());
+        const proj = headPos.clone().project(camera);
+
+        const tag = document.getElementById('boss-tag');
+        if (proj.z < 1) {
+            const x = (proj.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-proj.y * 0.5 + 0.5) * window.innerHeight;
+            tag.style.left = `${x}px`;
+            tag.style.top = `${y - 40}px`;
+            tag.style.display = 'block';
+            tag.innerText = `💥 TITAN BOSS (${Math.round(dist)}m)`;
+        } else {
+            tag.style.display = 'none';
+        }
     }
 
     function recalculateStats() {
@@ -531,7 +595,7 @@
     }
 
     function updateHUD() {
-        document.getElementById('ammo-display').innerText = `${currentAmmo} / ${effectiveStats.maxAmmo}`;
+        document.getElementById('ammo-val').innerText = `${currentAmmo} / ${effectiveStats.maxAmmo}`;
         document.getElementById('boss-hp-fill').style.width = `${(bossCurrentHP / bossMaxHP) * 100}%`;
         document.getElementById('boss-hp-text').innerText = `${Math.ceil(bossCurrentHP)} / ${bossMaxHP} HP`;
     }
@@ -543,9 +607,8 @@
         bossCurrentHP = bossMaxHP;
         bossSpeed += 0.01;
         isEnraged = false;
-        bossBodyMesh.material.color.setHex(0xff00ff);
-        boss.position.set(0, 0, 2);
-        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: PATROL';
+        bossGroup.position.set(0, 0, 20);
+        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: PATROL & APPROACH';
         faceBoss();
         updateHUD();
     }
@@ -562,11 +625,7 @@
         challengeActive = false;
         document.getElementById('challenge-widget').style.display = 'none';
         overdriveBuff = 2.0;
-        document.getElementById('reward-notification').innerText = 'BUFF ACTIVE: OVERDRIVE 2X DAMAGE!';
-        setTimeout(() => {
-            overdriveBuff = 1.0;
-            document.getElementById('reward-notification').innerText = '';
-        }, 12000);
+        setTimeout(() => { overdriveBuff = 1.0; }, 12000);
     }
 </script>
 </body>
