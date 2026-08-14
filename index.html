@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TITAN STRIKE AAA - Alien Titan Warzone</title>
+    <title>TITAN STRIKE AAA - Custom 3D Model Integration</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #020813; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
-        /* Homepage / Main Start Screen Overlay */
+        /* Homepage Overlay */
         #homepage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: radial-gradient(circle at center, rgba(5,20,35,0.85) 0%, rgba(2,8,19,0.98) 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; backdrop-filter: blur(10px); }
         #homepage-title { font-size: 54px; font-weight: 900; letter-spacing: 4px; color: #00f0ff; text-shadow: 0 0 30px rgba(0,240,255,0.8), 0 0 10px #000; margin-bottom: 6px; }
         #homepage-subtitle { font-size: 18px; color: #10b981; font-weight: 800; letter-spacing: 6px; margin-bottom: 35px; text-shadow: 0 0 15px rgba(16,185,129,0.8); }
@@ -36,11 +36,11 @@
 
         #pc-controls-help { color: #94a3b8; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; border-left: 2px solid #00f0ff; }
 
-        /* Holographic Alien Boss Health Bar */
-        #boss-hp-container { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 560px; background: rgba(7, 24, 15, 0.85); border: 1px solid rgba(16, 185, 129, 0.6); border-top: 3px solid #10b981; border-radius: 8px; padding: 12px; text-align: center; box-shadow: 0 0 30px rgba(16,185,129,0.4); backdrop-filter: blur(10px); }
-        #boss-title { color: #10b981; font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 6px; text-shadow: 0 0 14px rgba(16,185,129,0.9); }
-        #boss-hp-bar { width: 100%; height: 20px; background: rgba(10, 25, 18, 0.8); border-radius: 4px; overflow: hidden; border: 1px solid rgba(16,185,129,0.5); margin-bottom: 4px; }
-        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #00f0ff); transition: width 0.15s ease-out; box-shadow: 0 0 12px #10b981; }
+        /* Holographic Boss Health Bar */
+        #boss-hp-container { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 560px; background: rgba(15, 7, 18, 0.8); border: 1px solid rgba(255, 0, 85, 0.5); border-top: 3px solid #ff0055; border-radius: 8px; padding: 12px; text-align: center; box-shadow: 0 0 30px rgba(255,0,85,0.3); backdrop-filter: blur(10px); }
+        #boss-title { color: #ff0055; font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 6px; text-shadow: 0 0 14px rgba(255,0,85,0.9); }
+        #boss-hp-bar { width: 100%; height: 20px; background: rgba(20, 10, 25, 0.8); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,0,85,0.4); margin-bottom: 4px; }
+        #boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff6600); transition: width 0.15s ease-out; box-shadow: 0 0 12px #ff0055; }
         #boss-hp-text { color: #ffffff; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 3px #000; letter-spacing: 1px; }
         #boss-phase-badge { color: #ffcc00; font-size: 12px; font-weight: bold; margin-top: 4px; letter-spacing: 1px; }
 
@@ -75,7 +75,7 @@
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-35px) scale(1.35); } 100% { opacity: 0; transform: translateY(-70px) scale(1); } }
 
         /* Overhead Boss Tag */
-        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #10b981; pointer-events: none; transform: translate(-50%, -100%); background: rgba(16,185,129,0.9); padding: 5px 14px; border-radius: 12px; border: 1px solid #ffffff; box-shadow: 0 0 20px rgba(16,185,129,0.8); }
+        #boss-tag { position: absolute; color: #ffffff; font-size: 14px; font-weight: 900; text-shadow: 0 0 10px #ff0055; pointer-events: none; transform: translate(-50%, -100%); background: rgba(225,0,85,0.9); padding: 5px 14px; border-radius: 12px; border: 1px solid #ffffff; box-shadow: 0 0 20px rgba(255,0,85,0.8); }
 
         /* Challenge Widget */
         #challenge-widget { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); border: 1px solid #00f0ff; border-radius: 8px; padding: 8px 22px; color: #fff; font-size: 14px; display: none; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4); }
@@ -95,20 +95,21 @@
         #btn-close-craft { align-self: center; margin-top: 15px; padding: 12px 38px; background: #0284c7; border: none; border-radius: 8px; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
     <!-- Sci-Fi Homepage / Main Menu Start Screen -->
     <div id="homepage-overlay">
         <h1 id="homepage-title">TITAN STRIKE AAA</h1>
-        <div id="homepage-subtitle">👾 ALIEN WARZONE BATTLEGROUND</div>
+        <div id="homepage-subtitle">👹 TITAN MECH WARRIOR BATTLEGROUND</div>
         <button class="menu-btn btn-play" id="btn-start-game">▶ PLAY BATTLE</button>
         <button class="menu-btn" id="btn-menu-craft">🛠️ WEAPON BENCH</button>
     </div>
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
-    <div id="boss-tag">👾 ALIEN TITAN BEAST</div>
+    <div id="boss-tag">👹 TITAN MECH WARRIOR</div>
 
     <div id="hud-container">
         <div class="visor-frame"></div>
@@ -126,10 +127,10 @@
         </div>
 
         <div id="boss-hp-container">
-            <div id="boss-title">👾 ALIEN TITAN BEAST</div>
+            <div id="boss-title">👹 TITAN MECH WARRIOR</div>
             <div id="boss-hp-bar"><div id="boss-hp-fill" style="width: 68.7%;"></div></div>
             <div id="boss-hp-text">2545 / 3700 HP</div>
-            <div id="boss-phase-badge">PHASE 1: BIO-SPECIES DETECTED</div>
+            <div id="boss-phase-badge">PHASE 1: ENEMY DETECTED</div>
         </div>
 
         <div id="btn-cam-toggle" class="hud-element btn-action">📷 VIEW: TPV</div>
@@ -175,6 +176,7 @@
                 </div>
                 <div class="stat-row">
                     <div class="stat-label"><span>FIRE RATE</span><span id="val-fr">6.6/s</span></div>
+                    .
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fr"></div></div>
                 </div>
                 <div class="stat-row">
@@ -197,13 +199,20 @@
 <script>
     let scene, camera, renderer;
     let playerGroup, playerBody, headMesh, chestArmorMesh, visorMesh, gunMesh, leftLeg, rightLeg;
-    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftTentacle, bossRightTentacle, bossBioCoreMesh;
+    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftArm, bossRightArm, bossCoreLight, bossCoreMesh;
     let hitboxes = [];
     let rockObstacles = [];
     let tracerBeams = [];
     let particleSparks = [];
     let emberParticles = [];
     let spentCasings = [];
+
+    // Custom 3D Model Asset & Animation Mixer
+    const CUSTOM_BOSS_MODEL_URL = 'https://replicate.delivery/xezq/3cjfyfSKVSi5TUA8g7HWcYeSNJ2TBx8IYqRZMEAsUnXgNQGuA/tmpqvidedsc.glb';
+    let bossAnimationMixer = null;
+    let bossAnimations = [];
+    let bossCustomModel = null;
+    let clock = new THREE.Clock();
 
     let audioCtx = null;
     let wetAsphaltNormalMap, metalScratchNormalMap;
@@ -251,9 +260,8 @@
     function init() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020813);
-        scene.fog = new THREE.FogExp2(0x051a13, 0.0035);
+        scene.fog = new THREE.FogExp2(0x050c1e, 0.0035);
 
-        // Near Clipping Plane set to 0.05 so NOTHING EVER BLOCKS FPV CAMERA!
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 2000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -268,10 +276,10 @@
 
         generateMaps();
 
-        const ambientLight = new THREE.AmbientLight(0x064e3b, 0.9);
+        const ambientLight = new THREE.AmbientLight(0x1e293b, 0.9);
         scene.add(ambientLight);
 
-        const mainLight = new THREE.DirectionalLight(0x10b981, 1.8);
+        const mainLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
         mainLight.position.set(80, 150, 80);
         mainLight.castShadow = true;
         mainLight.shadow.mapSize.width = 2048;
@@ -279,20 +287,20 @@
         mainLight.shadow.bias = -0.0001;
         scene.add(mainLight);
 
-        const alienGlow1 = new THREE.PointLight(0x10b981, 4.0, 45);
-        alienGlow1.position.set(-15, 3, 10);
-        scene.add(alienGlow1);
+        const neonLight1 = new THREE.PointLight(0xff0055, 3.5, 40);
+        neonLight1.position.set(-15, 3, 10);
+        scene.add(neonLight1);
 
-        const alienGlow2 = new THREE.PointLight(0x00f0ff, 3.5, 45);
-        alienGlow2.position.set(15, 3, 10);
-        scene.add(alienGlow2);
+        const neonLight2 = new THREE.PointLight(0x00f0ff, 3.5, 40);
+        neonLight2.position.set(15, 3, 10);
+        scene.add(neonLight2);
 
         // Ground Terrain
         const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
         const groundMat = new THREE.MeshStandardMaterial({ 
-            color: 0x062016, 
-            roughness: 0.2,
-            metalness: 0.7,
+            color: 0x0f172a, 
+            roughness: 0.15,
+            metalness: 0.8,
             bumpMap: wetAsphaltNormalMap,
             bumpScale: 0.25
         });
@@ -301,16 +309,19 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        const alienGrid = new THREE.GridHelper(2000, 120, 0x10b981, 0x064e3b);
-        alienGrid.position.y = 0.02;
-        scene.add(alienGrid);
+        const warzoneGrid = new THREE.GridHelper(2000, 120, 0x00f0ff, 0x1e293b);
+        warzoneGrid.position.y = 0.02;
+        scene.add(warzoneGrid);
 
         createEmbers();
         createConcreteCover();
 
         createPlayerHero();
-        createAlienTitanBeastBoss();
+        createBossTitanPlaceholder();
         faceBoss();
+
+        // Load User's Custom 3D Model Asset Asynchronously!
+        loadCustomGLTFBossModel();
 
         recalculateStats();
         setupInputHandlers();
@@ -319,6 +330,88 @@
         setupHomepageHandlers();
 
         setInterval(startRandomChallenge, 30000);
+    }
+
+    // Load User's Custom 3D GLB Asset
+    function loadCustomGLTFBossModel() {
+        if (!THREE.GLTFLoader) return;
+        const loader = new THREE.GLTFLoader();
+
+        loader.load(
+            CUSTOM_BOSS_MODEL_URL,
+            (gltf) => {
+                const loadedModel = gltf.scene;
+
+                // Compute Bounding Box to auto-scale model height to 8.5m
+                const bbox = new THREE.Box3().setFromObject(loadedModel);
+                const size = new THREE.Vector3();
+                bbox.getSize(size);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const targetHeight = 8.5;
+                const scaleFactor = maxDim > 0 ? (targetHeight / maxDim) : 3.0;
+
+                loadedModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                // Center pivot at base feet
+                const newBbox = new THREE.Box3().setFromObject(loadedModel);
+                loadedModel.position.y = -newBbox.min.y;
+
+                // Enable Shadows & PBR Material Encoding
+                loadedModel.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material) {
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                });
+
+                // Set up Animation Mixer
+                if (gltf.animations && gltf.animations.length > 0) {
+                    bossAnimationMixer = new THREE.AnimationMixer(loadedModel);
+                    bossAnimations = gltf.animations;
+                    const action = bossAnimationMixer.clipAction(gltf.animations[0]);
+                    action.play();
+                }
+
+                // Bind Hitboxes to Sub-Meshes
+                hitboxes = [];
+                loadedModel.traverse((child) => {
+                    if (child.isMesh) {
+                        const name = child.name.toLowerCase();
+                        if (name.includes('head') || name.includes('core') || name.includes('eye')) {
+                            child.userData = { type: 'Head' };
+                        } else if (name.includes('armor') || name.includes('shield')) {
+                            child.userData = { type: 'Armor' };
+                        } else {
+                            child.userData = { type: 'Body' };
+                        }
+                        hitboxes.push(child);
+                    }
+                });
+
+                if (hitboxes.length === 0) {
+                    loadedModel.userData = { type: 'Body' };
+                    hitboxes.push(loadedModel);
+                }
+
+                // Hide procedural placeholder meshes, swap in Custom 3D Model
+                if (bossBody) bossBody.visible = false;
+                if (bossHead) bossHead.visible = false;
+                if (bossArmor) bossArmor.visible = false;
+
+                bossGroup.add(loadedModel);
+                bossCustomModel = loadedModel;
+                console.log("Custom 3D Model Loaded Successfully!");
+            },
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total * 100) + '% model loaded');
+            },
+            (err) => {
+                console.log("Custom model load fallback to procedural model", err);
+            }
+        );
     }
 
     function setupHomepageHandlers() {
@@ -423,7 +516,7 @@
             positions[i+2] = (Math.random() - 0.5) * 80;
         }
         emberGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        const emberMat = new THREE.PointsMaterial({ color: 0x10b981, size: 0.25, transparent: true, opacity: 0.8 });
+        const emberMat = new THREE.PointsMaterial({ color: 0xff0055, size: 0.25, transparent: true, opacity: 0.8 });
         const embers = new THREE.Points(emberGeo, emberMat);
         scene.add(embers);
         emberParticles = embers;
@@ -442,7 +535,7 @@
 
         const rockGeo = new THREE.DodecahedronGeometry(1.5, 1);
         const rockMat = new THREE.MeshStandardMaterial({ 
-            color: 0x064e3b, 
+            color: 0x334155, 
             roughness: 0.85, 
             metalness: 0.2
         });
@@ -508,96 +601,31 @@
         playerGroup.add(gunMesh);
     }
 
-    function createAlienTitanBeastBoss() {
+    function createBossTitanPlaceholder() {
         bossGroup = new THREE.Group();
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        const bodyGeo = new THREE.SphereGeometry(3.5, 24, 24);
-        bodyGeo.scale(1.0, 1.4, 1.0);
-        const bodyMat = new THREE.MeshStandardMaterial({ 
-            color: 0x064e3b, 
-            roughness: 0.2, 
-            metalness: 0.6,
-            bumpMap: wetAsphaltNormalMap,
-            bumpScale: 0.3
-        });
+        const bodyGeo = new THREE.CylinderGeometry(2.6, 3.2, 7.5, 16);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.85 });
         bossBody = new THREE.Mesh(bodyGeo, bodyMat);
-        bossBody.position.y = 4.5;
+        bossBody.position.y = 3.75;
         bossBody.castShadow = true;
         bossBody.userData = { type: 'Body' };
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        const coreGeo = new THREE.SphereGeometry(1.5, 24, 24);
-        const coreMat = new THREE.MeshStandardMaterial({ 
-            color: 0x10b981, 
-            emissive: 0x10b981, 
-            emissiveIntensity: 1.8,
-            roughness: 0.1
-        });
-        bossBioCoreMesh = new THREE.Mesh(coreGeo, coreMat);
-        bossBioCoreMesh.position.set(0, 4.5, 2.2);
-        bossGroup.add(bossBioCoreMesh);
-
-        const bioLight = new THREE.PointLight(0x10b981, 5.0, 25);
-        bioLight.position.set(0, 4.5, 2.5);
-        bossGroup.add(bioLight);
-
-        for (let i = -2; i <= 2; i += 2) {
-            const spikeGeo = new THREE.ConeGeometry(0.3, 3.5, 8);
-            const spikeMat = new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.3 });
-            const spike = new THREE.Mesh(spikeGeo, spikeMat);
-            spike.position.set(i * 1.5, 6.0, -1.8);
-            spike.rotation.x = -Math.PI / 4;
-            bossGroup.add(spike);
-        }
-
-        const tentacleGeo = new THREE.CylinderGeometry(0.4, 0.9, 6.0, 12);
-        const tentacleMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.3 });
-        
-        bossLeftTentacle = new THREE.Mesh(tentacleGeo, tentacleMat);
-        bossLeftTentacle.position.set(-4.0, 4.5, 0.5);
-        bossLeftTentacle.rotation.z = Math.PI / 6;
-        bossGroup.add(bossLeftTentacle);
-
-        bossRightTentacle = new THREE.Mesh(tentacleGeo, tentacleMat);
-        bossRightTentacle.position.set(4.0, 4.5, 0.5);
-        bossRightTentacle.rotation.z = -Math.PI / 6;
-        bossGroup.add(bossRightTentacle);
-
-        const headGeo = new THREE.SphereGeometry(2.4, 20, 20);
-        headGeo.scale(1.1, 0.9, 1.2);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.15, metalness: 0.7 });
+        const headGeo = new THREE.SphereGeometry(2.3, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.8, roughness: 0.2 });
         bossHead = new THREE.Mesh(headGeo, headMat);
-        bossHead.position.y = 9.2;
+        bossHead.position.y = 8.8;
         bossHead.castShadow = true;
         bossHead.userData = { type: 'Head' };
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
-        [-0.8, 0.8, -0.4, 0.4].forEach((xOff, idx) => {
-            const eyeGeo = new THREE.SphereGeometry(0.35, 12, 12);
-            const eyeMat = new THREE.MeshStandardMaterial({ 
-                color: idx % 2 === 0 ? 0xff0055 : 0xa855f7, 
-                emissive: idx % 2 === 0 ? 0xff0055 : 0xa855f7, 
-                emissiveIntensity: 2.0 
-            });
-            const eye = new THREE.Mesh(eyeGeo, eyeMat);
-            eye.position.set(xOff, 9.4, 1.8 + (Math.abs(xOff) * 0.3));
-            bossGroup.add(eye);
-        });
-
-        const armorGeo = new THREE.BoxGeometry(3.8, 3.8, 0.9);
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.9, roughness: 0.1 });
-        bossArmor = new THREE.Mesh(armorGeo, armorMat);
-        bossArmor.position.set(0, 4.5, -3.4);
-        bossArmor.userData = { type: 'Armor' };
-        bossGroup.add(bossArmor);
-        hitboxes.push(bossArmor);
-
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.65 });
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.65 });
         attackIndicator = new THREE.Mesh(ringGeo, ringMat);
         attackIndicator.position.y = 0.05;
         bossGroup.add(attackIndicator);
@@ -611,14 +639,12 @@
         cameraPitch = 0.0;
     }
 
-    // Toggle Camera View with PERFECT FPV (Nothing blocking camera vision!)
     function toggleCameraView() {
         currentCamModeIndex = (currentCamModeIndex + 1) % cameraModes.length;
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
 
         if (mode === 'FPV') {
-            // HIDE ALL PLAYER BODY & ARMOR PARTS IN FPV SO VISION IS 100% UNBLOCKED!
             playerBody.visible = false;
             chestArmorMesh.visible = false;
             headMesh.visible = false;
@@ -627,9 +653,8 @@
             rightLeg.visible = false;
 
             gunMesh.visible = true;
-            gunMesh.position.set(0.18, 1.9, 0.65); // Gun positioned right in sight view
+            gunMesh.position.set(0.18, 1.9, 0.65);
         } else {
-            // SHOW ALL BODY PARTS IN TPV & CINEMATIC
             playerBody.visible = true;
             chestArmorMesh.visible = true;
             headMesh.visible = true;
@@ -776,15 +801,12 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        const delta = clock.getDelta();
         animTime += 0.05;
 
-        if (bossBioCoreMesh) {
-            bossBioCoreMesh.material.emissiveIntensity = 1.2 + Math.sin(animTime * 5) * 0.6;
-        }
-
-        if (bossLeftTentacle && bossRightTentacle) {
-            bossLeftTentacle.rotation.x = Math.sin(animTime * 3) * 0.3;
-            bossRightTentacle.rotation.x = -Math.sin(animTime * 3) * 0.3;
+        // Update Animation Mixer for Custom 3D Model
+        if (bossAnimationMixer) {
+            bossAnimationMixer.update(delta);
         }
 
         if (emberParticles) {
@@ -871,7 +893,6 @@
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
-            // First Person View: Camera placed right in front of head/eyes at Y = 2.1
             camera.position.set(
                 playerGroup.position.x + shakeX,
                 playerGroup.position.y + 2.15 + recoilOffset * 0.1 + shakeY,
@@ -1014,7 +1035,7 @@
 
             if (!isEnraged && bossCurrentHP <= bossMaxHP * 0.5) {
                 isEnraged = true;
-                bossBody.material.color.setHex(0xd97706);
+                if (bossBody) bossBody.material.color.setHex(0xd97706);
                 bossSpeed *= 1.6;
                 document.getElementById('boss-phase-badge').innerText = 'PHASE 2: ENRAGED!';
             }
@@ -1040,7 +1061,7 @@
 
     function spawnHitSparks(pos) {
         const sparkGeo = new THREE.SphereGeometry(0.12, 8, 8);
-        const sparkMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
         for (let i = 0; i < 8; i++) {
             const spark = new THREE.Mesh(sparkGeo, sparkMat);
             spark.position.copy(pos);
@@ -1057,7 +1078,7 @@
 
     function executeBossAttack() {
         isAttacking = true;
-        document.getElementById('boss-phase-badge').innerText = 'WARNING: BIO-ACID ATTACK!';
+        document.getElementById('boss-phase-badge').innerText = 'WARNING: INCOMING ATTACK!';
 
         let scale = 0;
         const interval = setInterval(() => {
@@ -1067,7 +1088,7 @@
                 clearInterval(interval);
                 attackIndicator.scale.set(0.1, 1, 0.1);
                 isAttacking = false;
-                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: BIO-SPECIES DETECTED';
+                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: ENEMY DETECTED';
                 
                 const dist = playerGroup.position.distanceTo(bossGroup.position);
                 if (dist < 8) {
@@ -1111,7 +1132,7 @@
             elem.style.fontSize = '20px';
         } else {
             elem.innerText = type === 'Head' ? `CRIT! ${Math.round(dmg)}` : Math.round(dmg);
-            elem.style.color = type === 'Head' ? '#facc15' : (type === 'Armor' ? '#94a3b8' : '#10b981');
+            elem.style.color = type === 'Head' ? '#facc15' : (type === 'Armor' ? '#94a3b8' : '#ef4444');
         }
 
         const proj = worldPos.clone().project(camera);
@@ -1125,8 +1146,8 @@
     }
 
     function updateBossTag(dist) {
-        const headPos = bossHead.getWorldPosition(new THREE.Vector3());
-        const proj = headPos.clone().project(camera);
+        const targetPos = bossHead ? bossHead.getWorldPosition(new THREE.Vector3()) : bossGroup.position;
+        const proj = targetPos.clone().project(camera);
 
         const tag = document.getElementById('boss-tag');
         if (proj.z < 1) {
@@ -1135,7 +1156,7 @@
             tag.style.left = `${x}px`;
             tag.style.top = `${y - 40}px`;
             tag.style.display = 'block';
-            tag.innerText = `👾 ALIEN TITAN (${Math.round(dist)}m)`;
+            tag.innerText = `👹 TITAN MECH (${Math.round(dist)}m)`;
         } else {
             tag.style.display = 'none';
         }
@@ -1207,7 +1228,7 @@
         bossSpeed += 0.01;
         isEnraged = false;
         bossGroup.position.set(0, 0, 20);
-        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: BIO-SPECIES DETECTED';
+        document.getElementById('boss-phase-badge').innerText = 'PHASE 1: ENEMY DETECTED';
         faceBoss();
         updateHUD();
     }
