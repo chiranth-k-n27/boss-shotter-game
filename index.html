@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TITAN STRIKE AAA - Custom 3D Model Integration</title>
+    <title>TITAN STRIKE AAA - 3D Boss Model Integration</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #020813; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
@@ -12,7 +12,7 @@
         /* Homepage Overlay */
         #homepage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: radial-gradient(circle at center, rgba(5,20,35,0.85) 0%, rgba(2,8,19,0.98) 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; backdrop-filter: blur(10px); }
         #homepage-title { font-size: 54px; font-weight: 900; letter-spacing: 4px; color: #00f0ff; text-shadow: 0 0 30px rgba(0,240,255,0.8), 0 0 10px #000; margin-bottom: 6px; }
-        #homepage-subtitle { font-size: 18px; color: #10b981; font-weight: 800; letter-spacing: 6px; margin-bottom: 35px; text-shadow: 0 0 15px rgba(16,185,129,0.8); }
+        #homepage-subtitle { font-size: 18px; color: #ff0055; font-weight: 800; letter-spacing: 6px; margin-bottom: 35px; text-shadow: 0 0 15px rgba(255,0,85,0.8); }
         .menu-btn { width: 260px; padding: 16px 0; margin: 10px 0; background: rgba(10, 25, 45, 0.9); border: 2px solid #00f0ff; border-radius: 30px; color: #00f0ff; font-size: 18px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 20px rgba(0,240,255,0.3); }
         .menu-btn:hover { background: #00f0ff; color: #020813; transform: scale(1.06); box-shadow: 0 0 35px rgba(0,240,255,0.8); }
         .menu-btn.btn-play { background: linear-gradient(90deg, #ff0055, #ff5500); border-color: #ff0055; color: #fff; box-shadow: 0 0 25px rgba(255,0,85,0.6); }
@@ -102,14 +102,14 @@
     <!-- Sci-Fi Homepage / Main Menu Start Screen -->
     <div id="homepage-overlay">
         <h1 id="homepage-title">TITAN STRIKE AAA</h1>
-        <div id="homepage-subtitle">👹 TITAN MECH WARRIOR BATTLEGROUND</div>
+        <div id="homepage-subtitle">👹 TITAN WARZONE BATTLEGROUND</div>
         <button class="menu-btn btn-play" id="btn-start-game">▶ PLAY BATTLE</button>
         <button class="menu-btn" id="btn-menu-craft">🛠️ WEAPON BENCH</button>
     </div>
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
-    <div id="boss-tag">👹 TITAN MECH WARRIOR</div>
+    <div id="boss-tag">👹 TITAN BOSS</div>
 
     <div id="hud-container">
         <div class="visor-frame"></div>
@@ -127,7 +127,7 @@
         </div>
 
         <div id="boss-hp-container">
-            <div id="boss-title">👹 TITAN MECH WARRIOR</div>
+            <div id="boss-title">👹 TITAN BOSS</div>
             <div id="boss-hp-bar"><div id="boss-hp-fill" style="width: 68.7%;"></div></div>
             <div id="boss-hp-text">2545 / 3700 HP</div>
             <div id="boss-phase-badge">PHASE 1: ENEMY DETECTED</div>
@@ -176,7 +176,6 @@
                 </div>
                 <div class="stat-row">
                     <div class="stat-label"><span>FIRE RATE</span><span id="val-fr">6.6/s</span></div>
-                    .
                     <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fr"></div></div>
                 </div>
                 <div class="stat-row">
@@ -199,7 +198,7 @@
 <script>
     let scene, camera, renderer;
     let playerGroup, playerBody, headMesh, chestArmorMesh, visorMesh, gunMesh, leftLeg, rightLeg;
-    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftArm, bossRightArm, bossCoreLight, bossCoreMesh;
+    let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
     let hitboxes = [];
     let rockObstacles = [];
     let tracerBeams = [];
@@ -207,10 +206,10 @@
     let emberParticles = [];
     let spentCasings = [];
 
-    // Custom 3D Model Asset & Animation Mixer
-    const CUSTOM_BOSS_MODEL_URL = 'https://replicate.delivery/xezq/3cjfyfSKVSi5TUA8g7HWcYeSNJ2TBx8IYqRZMEAsUnXgNQGuA/tmpqvidedsc.glb';
+    // Local & Remote URL for User's Custom GLB Model (tmpqvidedsc.glb)
+    const LOCAL_BOSS_MODEL_URL = './boss_model.glb';
+    const FALLBACK_BOSS_MODEL_URL = 'https://replicate.delivery/xezq/3cjfyfSKVSi5TUA8g7HWcYeSNJ2TBx8IYqRZMEAsUnXgNQGuA/tmpqvidedsc.glb';
     let bossAnimationMixer = null;
-    let bossAnimations = [];
     let bossCustomModel = null;
     let clock = new THREE.Clock();
 
@@ -320,8 +319,8 @@
         createBossTitanPlaceholder();
         faceBoss();
 
-        // Load User's Custom 3D Model Asset Asynchronously!
-        loadCustomGLTFBossModel();
+        // Load User's Custom 3D Model GLB File!
+        loadUserGLTFBossModel(LOCAL_BOSS_MODEL_URL);
 
         recalculateStats();
         setupInputHandlers();
@@ -332,17 +331,17 @@
         setInterval(startRandomChallenge, 30000);
     }
 
-    // Load User's Custom 3D GLB Asset
-    function loadCustomGLTFBossModel() {
+    // Load User's 3D Model GLB File (tmpqvidedsc.glb)
+    function loadUserGLTFBossModel(url) {
         if (!THREE.GLTFLoader) return;
         const loader = new THREE.GLTFLoader();
 
         loader.load(
-            CUSTOM_BOSS_MODEL_URL,
+            url,
             (gltf) => {
                 const loadedModel = gltf.scene;
 
-                // Compute Bounding Box to auto-scale model height to 8.5m
+                // Auto-scale model height to 8.5m
                 const bbox = new THREE.Box3().setFromObject(loadedModel);
                 const size = new THREE.Vector3();
                 bbox.getSize(size);
@@ -356,7 +355,7 @@
                 const newBbox = new THREE.Box3().setFromObject(loadedModel);
                 loadedModel.position.y = -newBbox.min.y;
 
-                // Enable Shadows & PBR Material Encoding
+                // Enable Shadows & PBR Textures
                 loadedModel.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -367,10 +366,9 @@
                     }
                 });
 
-                // Set up Animation Mixer
+                // Animation Mixer
                 if (gltf.animations && gltf.animations.length > 0) {
                     bossAnimationMixer = new THREE.AnimationMixer(loadedModel);
-                    bossAnimations = gltf.animations;
                     const action = bossAnimationMixer.clipAction(gltf.animations[0]);
                     action.play();
                 }
@@ -396,20 +394,23 @@
                     hitboxes.push(loadedModel);
                 }
 
-                // Hide procedural placeholder meshes, swap in Custom 3D Model
+                // Hide procedural placeholder meshes
                 if (bossBody) bossBody.visible = false;
                 if (bossHead) bossHead.visible = false;
                 if (bossArmor) bossArmor.visible = false;
 
                 bossGroup.add(loadedModel);
                 bossCustomModel = loadedModel;
-                console.log("Custom 3D Model Loaded Successfully!");
+                console.log("Successfully loaded 3D GLB Boss Model:", url);
             },
             (xhr) => {
                 console.log((xhr.loaded / xhr.total * 100) + '% model loaded');
             },
             (err) => {
-                console.log("Custom model load fallback to procedural model", err);
+                console.log("Local model path fallback to remote CDN URL...", err);
+                if (url !== FALLBACK_BOSS_MODEL_URL) {
+                    loadUserGLTFBossModel(FALLBACK_BOSS_MODEL_URL);
+                }
             }
         );
     }
@@ -804,7 +805,6 @@
         const delta = clock.getDelta();
         animTime += 0.05;
 
-        // Update Animation Mixer for Custom 3D Model
         if (bossAnimationMixer) {
             bossAnimationMixer.update(delta);
         }
@@ -1156,7 +1156,7 @@
             tag.style.left = `${x}px`;
             tag.style.top = `${y - 40}px`;
             tag.style.display = 'block';
-            tag.innerText = `👹 TITAN MECH (${Math.round(dist)}m)`;
+            tag.innerText = `👹 TITAN BOSS (${Math.round(dist)}m)`;
         } else {
             tag.style.display = 'none';
         }
