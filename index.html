@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TITAN STRIKE AAA - Photorealistic Unreal-Grade Boss Shooter</title>
+    <title>TITAN STRIKE AAA - 3D Models & PBR Skins</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #030712; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
-        /* Cinematic Post-Processing & HUD Overlay */
+        /* Cinematic Visor & HUD Overlay */
         #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         .hud-element { pointer-events: auto; }
 
-        /* Helmet Visor Curved Curved Framing Lines */
         .visor-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 12px solid rgba(0, 240, 255, 0.08); border-radius: 40px; pointer-events: none; box-shadow: inset 0 0 50px rgba(0,240,255,0.1); }
 
         /* Holographic Diegetic HUD Containers */
@@ -87,6 +86,7 @@
         #btn-close-craft { align-self: center; margin-top: 15px; padding: 12px 38px; background: #0284c7; border: none; border-radius: 8px; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
@@ -190,25 +190,28 @@
     let emberParticles = [];
     let spentCasings = [];
 
+    let playerLoadedGLTF = null;
+    let bossLoadedGLTF = null;
+
     // Web Audio Synthesizer
     let audioCtx = null;
 
     // PBR Textures
-    let wetAsphaltNormalMap, wetAsphaltRoughnessMap, metalScratchNormalMap, metalRustRoughnessMap, concreteBumpMap;
+    let wetAsphaltNormalMap, wetAsphaltRoughnessMap, metalScratchNormalMap, metalRustRoughnessMap;
 
     // Camera Modes
     const cameraModes = ['TPV', 'FPV', 'CINEMATIC'];
     let currentCamModeIndex = 0;
 
     // Player State
-    let playerMaxHP = 100, playerCurrentHP = 40; // Initialized to 40/100 as requested
+    let playerMaxHP = 100, playerCurrentHP = 40;
     let playerRadius = 0.6;
     let animTime = 0;
 
     // Game Progression
     let currentLevel = 1;
     let baseBossHP = 3700;
-    let bossMaxHP = 3700, bossCurrentHP = 2545; // Initialized to 2545/3700 as requested
+    let bossMaxHP = 3700, bossCurrentHP = 2545;
     let bossSpeed = 0.07;
     let isEnraged = false, isAttacking = false;
 
@@ -243,17 +246,16 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x030712); // Dark Cyberpunk Warzone Sky
-        scene.fog = new THREE.FogExp2(0x050c1e, 0.0035); // Dystopian Volumetric Fog
+        scene.background = new THREE.Color(0x030712);
+        scene.fog = new THREE.FogExp2(0x050c1e, 0.0035);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
 
-        // High-End WebGL Renderer Configuration
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ultra Soft Dynamic Shadows
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic HDR Tone Mapping
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.2;
         renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -261,11 +263,9 @@
 
         generatePhotorealisticPBRMaps();
 
-        // Photorealistic Dystopian Arena Lighting (Neon Lights + Sun + Fog Shafts)
         const ambientLight = new THREE.AmbientLight(0x1e293b, 0.9);
         scene.add(ambientLight);
 
-        // Sunlight / Moon Shaft
         const mainLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
         mainLight.position.set(80, 150, 80);
         mainLight.castShadow = true;
@@ -274,7 +274,6 @@
         mainLight.shadow.bias = -0.0001;
         scene.add(mainLight);
 
-        // Dynamic Neon Pointlights (Cyberpunk Warzone Lighting)
         const neonLight1 = new THREE.PointLight(0xff0055, 3.5, 40);
         neonLight1.position.set(-15, 3, 10);
         scene.add(neonLight1);
@@ -283,11 +282,11 @@
         neonLight2.position.set(15, 3, 10);
         scene.add(neonLight2);
 
-        // Photorealistic Wet Asphalt Warzone Ground (PBR Reflection & Roughness)
+        // Photorealistic Wet Asphalt Warzone Ground
         const groundGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
         const groundMat = new THREE.MeshStandardMaterial({ 
             color: 0x0f172a, 
-            roughness: 0.15, // Ultra reflective wet asphalt surface!
+            roughness: 0.15,
             metalness: 0.8,
             bumpMap: wetAsphaltNormalMap,
             bumpScale: 0.25,
@@ -298,20 +297,19 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Dystopian Grid Overlay
         const warzoneGrid = new THREE.GridHelper(2000, 120, 0x00f0ff, 0x1e293b);
         warzoneGrid.position.y = 0.02;
         scene.add(warzoneGrid);
 
-        // Flying Atmospheric Embers
         createAtmosphericEmbers();
-
-        // Crumbling Concrete Cover Structures
         createCrumblingConcreteCover();
 
         createPlayerHeroPhotorealistic();
         createBossTitanMechWarrior();
         faceBoss();
+
+        // Load 3D Models & Skins asynchronously via CDN
+        loadExternal3DModelsAndSkins();
 
         recalculateStats();
         setupInputHandlers();
@@ -319,6 +317,74 @@
         setupCraftingUI();
 
         setInterval(startRandomChallenge, 30000);
+    }
+
+    function loadExternal3DModelsAndSkins() {
+        if (!THREE.GLTFLoader) return;
+
+        const loader = new THREE.GLTFLoader();
+
+        // Load Free 3D Soldier Skin Model for Player
+        loader.load(
+            'https://unpkg.com/three@0.128.0/examples/models/gltf/Soldier.glb',
+            (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(1.5, 1.5, 1.5);
+                model.position.set(0, 0, 0);
+
+                // Apply PBR Tactical Armor Shader Skins
+                model.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0x0284c7,
+                            roughness: 0.3,
+                            metalness: 0.7,
+                            normalMap: metalScratchNormalMap
+                        });
+                    }
+                });
+
+                // Swap procedural player body with GLTF model
+                playerBody.visible = false;
+                playerGroup.add(model);
+                playerLoadedGLTF = model;
+            },
+            undefined,
+            (err) => console.log("Using procedural player hero model fallback")
+        );
+
+        // Load Free 3D Robot Expressive Mech Model for Titan Boss
+        loader.load(
+            'https://unpkg.com/three@0.128.0/examples/models/gltf/RobotExpressive/RobotExpressive.glb',
+            (gltf) => {
+                const mechModel = gltf.scene;
+                mechModel.scale.set(3.5, 3.5, 3.5);
+                mechModel.position.set(0, 0, 0);
+
+                // Apply Battle-Damaged Metallic Rust PBR Skins
+                mechModel.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0x475569,
+                            roughness: 0.4,
+                            metalness: 0.85,
+                            normalMap: metalScratchNormalMap
+                        });
+                    }
+                });
+
+                // Hide procedural body mesh, swap in Mech GLTF
+                bossBody.visible = false;
+                bossGroup.add(mechModel);
+                bossLoadedGLTF = mechModel;
+            },
+            undefined,
+            (err) => console.log("Using procedural boss mech model fallback")
+        );
     }
 
     function initAudio() {
@@ -373,7 +439,6 @@
     }
 
     function generatePhotorealisticPBRMaps() {
-        // Wet Asphalt Normal Map
         const c1 = document.createElement('canvas');
         c1.width = 512; c1.height = 512;
         const ctx1 = c1.getContext('2d');
@@ -387,20 +452,18 @@
         wetAsphaltNormalMap.wrapT = THREE.RepeatWrapping;
         wetAsphaltNormalMap.repeat.set(50, 50);
 
-        // Wet Asphalt Roughness Map
         const c2 = document.createElement('canvas');
         c2.width = 512; c2.height = 512;
         const ctx2 = c2.getContext('2d');
         ctx2.fillStyle = '#303030'; ctx2.fillRect(0,0,512,512);
         for(let i=0; i<100; i++) {
-            ctx2.fillStyle = '#101010'; // Water puddle spots
+            ctx2.fillStyle = '#101010';
             ctx2.beginPath();
             ctx2.arc(Math.random()*512, Math.random()*512, Math.random()*40, 0, Math.PI*2);
             ctx2.fill();
         }
         wetAsphaltRoughnessMap = new THREE.CanvasTexture(c2);
 
-        // Metallic Scratch Normal Map
         const c3 = document.createElement('canvas');
         c3.width = 512; c3.height = 512;
         const ctx3 = c3.getContext('2d');
@@ -473,7 +536,6 @@
         playerGroup.position.set(0, 0, -10);
         scene.add(playerGroup);
 
-        // Tactical Exo-Suit Soldier
         const torsoGeo = new THREE.BoxGeometry(0.85, 1.25, 0.55);
         const torsoMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7, normalMap: metalScratchNormalMap });
         playerBody = new THREE.Mesh(torsoGeo, torsoMat);
@@ -493,7 +555,6 @@
         headMesh.position.y = 2.15;
         playerGroup.add(headMesh);
 
-        // Holographic Visor
         const visorGeo = new THREE.BoxGeometry(0.4, 0.12, 0.2);
         const visorMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 1.2 });
         const visor = new THREE.Mesh(visorGeo, visorMat);
@@ -510,7 +571,6 @@
         rightLeg.position.set(0.25, 0.45, 0);
         playerGroup.add(rightLeg);
 
-        // High-Tech Gun Mesh
         const gunGroup = new THREE.Group();
         const bodyGun = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.95), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.9 }));
         const scopeGun = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.8 }));
@@ -535,7 +595,6 @@
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // 1. Weathered, Battle-Damaged Metallic Mech Body
         const bodyGeo = new THREE.CylinderGeometry(2.6, 3.2, 7.5, 16);
         const bodyMat = new THREE.MeshStandardMaterial({ 
             color: 0x475569, 
@@ -550,7 +609,6 @@
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // 2. Glowing Core Reactor with Heat Distortion FX
         const coreGeo = new THREE.SphereGeometry(1.3, 24, 24);
         const coreMat = new THREE.MeshStandardMaterial({ 
             color: 0xff0055, 
@@ -566,7 +624,6 @@
         bossCoreLight.position.set(0, 4.2, 2.2);
         bossGroup.add(bossCoreLight);
 
-        // 3. Exposed Wiring & Mechanical Joints
         for (let i = -1; i <= 1; i += 2) {
             const wireGeo = new THREE.TorusGeometry(1.2, 0.08, 8, 24);
             const wireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
@@ -575,7 +632,6 @@
             bossGroup.add(wire);
         }
 
-        // 4. Dynamic Hydraulics & Mech Arms
         const armGeo = new THREE.CylinderGeometry(0.8, 0.8, 5.0, 12);
         const armMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
         
@@ -587,7 +643,6 @@
         bossRightArm.position.set(3.6, 4.5, 0);
         bossGroup.add(bossRightArm);
 
-        // Hydraulic Piston Cylinders
         const pistonGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.5, 8);
         const pistonMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
         
@@ -601,7 +656,6 @@
         bossGroup.add(p2);
         hydraulicPistons.push(p2);
 
-        // 5. Head Weakspot Skull
         const headGeo = new THREE.SphereGeometry(2.3, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.8, roughness: 0.2 });
         bossHead = new THREE.Mesh(headGeo, headMat);
@@ -611,7 +665,6 @@
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
-        // 6. Chest Armor Plate
         const armorGeo = new THREE.BoxGeometry(3.6, 3.6, 0.85);
         const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95, roughness: 0.1 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
@@ -620,7 +673,6 @@
         bossGroup.add(bossArmor);
         hitboxes.push(bossArmor);
 
-        // Attack Ring Indicator
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.65 });
         attackIndicator = new THREE.Mesh(ringGeo, ringMat);
@@ -644,11 +696,13 @@
         if (mode === 'FPV') {
             playerBody.visible = false;
             headMesh.visible = false;
+            if (playerLoadedGLTF) playerLoadedGLTF.visible = false;
             gunMesh.visible = true;
             gunMesh.position.set(0.2, 1.9, 0.6);
         } else {
             playerBody.visible = true;
             headMesh.visible = true;
+            if (playerLoadedGLTF) playerLoadedGLTF.visible = true;
             gunMesh.visible = true;
             gunMesh.position.set(0.4, 1.45, 0.5);
         }
@@ -779,7 +833,6 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // WASD Inputs: D = Right, A = Left
         setInterval(() => {
             kbMoveInput.x = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -790,17 +843,14 @@
         requestAnimationFrame(animate);
         animTime += 0.05;
 
-        // Core Pulse Heat Distortion Simulation
         if (bossCoreMesh) {
             bossCoreMesh.material.emissiveIntensity = 1.0 + Math.sin(animTime * 4) * 0.5;
         }
 
-        // Hydraulic Piston Motion Simulation
         hydraulicPistons.forEach((p, idx) => {
             p.position.y = 3.0 + Math.sin(animTime * 2 + idx) * 0.2;
         });
 
-        // Embers Rising Motion
         if (emberParticles) {
             const pos = emberParticles.geometry.attributes.position.array;
             for(let i=1; i<pos.length; i+=3) {
@@ -810,11 +860,10 @@
             emberParticles.geometry.attributes.position.needsUpdate = true;
         }
 
-        // Spent Bullet Casings Physics Simulation
         for (let i = spentCasings.length - 1; i >= 0; i--) {
             const c = spentCasings[i];
             c.mesh.position.add(c.vel);
-            c.vel.y -= 0.015; // Gravity
+            c.vel.y -= 0.015;
             c.mesh.rotation.x += 0.2;
             c.mesh.rotation.y += 0.2;
             c.life -= 0.03;
@@ -824,7 +873,6 @@
             }
         }
 
-        // Movement
         const rawX = Math.abs(moveInput.x) > 0.05 ? moveInput.x : kbMoveInput.x;
         const rawY = Math.abs(moveInput.y) > 0.05 ? moveInput.y : kbMoveInput.y;
         const isMoving = (Math.abs(rawX) > 0.05 || Math.abs(rawY) > 0.05);
@@ -866,7 +914,6 @@
         if (recoilOffset > 0) recoilOffset -= 0.05;
         if (cameraShake > 0) cameraShake -= 0.05;
 
-        // Camera Positioning & Camera Shake
         const mode = cameraModes[currentCamModeIndex];
 
         const targetX = playerGroup.position.x + Math.sin(cameraYaw) * 20 * Math.cos(cameraPitch);
@@ -902,7 +949,6 @@
 
         checkAimLock();
 
-        // Animate Bullet Tracers
         for (let i = tracerBeams.length - 1; i >= 0; i--) {
             tracerBeams[i].material.opacity -= 0.1;
             if (tracerBeams[i].material.opacity <= 0) {
@@ -911,7 +957,6 @@
             }
         }
 
-        // Animate Hit Spark Particles
         for (let i = particleSparks.length - 1; i >= 0; i--) {
             const p = particleSparks[i];
             p.mesh.position.add(p.vel);
@@ -923,14 +968,12 @@
             }
         }
 
-        // Firing Combat
         const now = performance.now() / 1000;
         if (isFiring && now >= lastFireTime + effectiveStats.fireRate && !isReloading) {
             if (currentAmmo > 0) fireWeapon(now);
             else reloadWeapon();
         }
 
-        // Boss AI Logic
         if (bossCurrentHP > 0) {
             const dist = playerGroup.position.distanceTo(bossGroup.position);
             bossGroup.lookAt(playerGroup.position.x, bossGroup.position.y, playerGroup.position.z);
@@ -987,7 +1030,6 @@
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-        // Muzzle Flash Beam
         const startPos = gunMesh.getWorldPosition(new THREE.Vector3());
         const endPos = startPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(60));
         
@@ -997,7 +1039,6 @@
         scene.add(tracer);
         tracerBeams.push(tracer);
 
-        // Eject Spent Brass Casing FX
         ejectBrassCasing(startPos);
 
         const rockMeshes = rockObstacles.map(r => r.mesh);
@@ -1089,7 +1130,7 @@
                 clearInterval(interval);
                 attackIndicator.scale.set(0.1, 1, 0.1);
                 isAttacking = false;
-                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: PATROL & APPROACH';
+                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: ENEMY DETECTED';
                 
                 const dist = playerGroup.position.distanceTo(bossGroup.position);
                 if (dist < 8) {
