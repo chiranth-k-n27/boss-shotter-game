@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TITAN STRIKE AAA - Alien Titan Beast & Reversed Controls</title>
+    <title>TITAN STRIKE AAA - Alien Titan Warzone</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #030712; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #020813; font-family: 'Orbitron', 'Segoe UI', Roboto, sans-serif; }
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
+        /* Homepage / Main Start Screen Overlay */
+        #homepage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: radial-gradient(circle at center, rgba(5,20,35,0.85) 0%, rgba(2,8,19,0.98) 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; backdrop-filter: blur(10px); }
+        #homepage-title { font-size: 54px; font-weight: 900; letter-spacing: 4px; color: #00f0ff; text-shadow: 0 0 30px rgba(0,240,255,0.8), 0 0 10px #000; margin-bottom: 6px; }
+        #homepage-subtitle { font-size: 18px; color: #10b981; font-weight: 800; letter-spacing: 6px; margin-bottom: 35px; text-shadow: 0 0 15px rgba(16,185,129,0.8); }
+        .menu-btn { width: 260px; padding: 16px 0; margin: 10px 0; background: rgba(10, 25, 45, 0.9); border: 2px solid #00f0ff; border-radius: 30px; color: #00f0ff; font-size: 18px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 20px rgba(0,240,255,0.3); }
+        .menu-btn:hover { background: #00f0ff; color: #020813; transform: scale(1.06); box-shadow: 0 0 35px rgba(0,240,255,0.8); }
+        .menu-btn.btn-play { background: linear-gradient(90deg, #ff0055, #ff5500); border-color: #ff0055; color: #fff; box-shadow: 0 0 25px rgba(255,0,85,0.6); }
+        .menu-btn.btn-play:hover { background: linear-gradient(90deg, #ff3377, #ff7722); color: #fff; box-shadow: 0 0 45px rgba(255,0,85,0.9); }
+
         /* Visor & HUD Overlay */
-        #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        #hud-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: none; }
         .hud-element { pointer-events: auto; }
 
         .visor-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 12px solid rgba(0, 240, 255, 0.08); border-radius: 40px; pointer-events: none; box-shadow: inset 0 0 50px rgba(0,240,255,0.1); }
@@ -88,6 +97,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+    <!-- Sci-Fi Homepage / Main Menu Start Screen -->
+    <div id="homepage-overlay">
+        <h1 id="homepage-title">TITAN STRIKE AAA</h1>
+        <div id="homepage-subtitle">👾 ALIEN WARZONE BATTLEGROUND</div>
+        <button class="menu-btn btn-play" id="btn-start-game">▶ PLAY BATTLE</button>
+        <button class="menu-btn" id="btn-menu-craft">🛠️ WEAPON BENCH</button>
+    </div>
 
     <div id="canvas-container"></div>
     <div id="damage-text-container"></div>
@@ -179,7 +196,7 @@
 
 <script>
     let scene, camera, renderer;
-    let playerGroup, playerBody, headMesh, gunMesh, leftLeg, rightLeg;
+    let playerGroup, playerBody, headMesh, chestArmorMesh, visorMesh, gunMesh, leftLeg, rightLeg;
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator, bossLeftTentacle, bossRightTentacle, bossBioCoreMesh;
     let hitboxes = [];
     let rockObstacles = [];
@@ -234,9 +251,10 @@
     function init() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020813);
-        scene.fog = new THREE.FogExp2(0x051a13, 0.0035); // Alien bio-fog
+        scene.fog = new THREE.FogExp2(0x051a13, 0.0035);
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        // Near Clipping Plane set to 0.05 so NOTHING EVER BLOCKS FPV CAMERA!
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 2000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -291,15 +309,28 @@
         createConcreteCover();
 
         createPlayerHero();
-        createAlienTitanBeastBoss(); // Transform Boss into ALIEN TITAN BEAST!
+        createAlienTitanBeastBoss();
         faceBoss();
 
         recalculateStats();
         setupInputHandlers();
         setupJoystick();
         setupCraftingUI();
+        setupHomepageHandlers();
 
         setInterval(startRandomChallenge, 30000);
+    }
+
+    function setupHomepageHandlers() {
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('homepage-overlay').style.display = 'none';
+            document.getElementById('hud-container').style.display = 'block';
+            document.body.requestPointerLock();
+        });
+        document.getElementById('btn-menu-craft').addEventListener('click', () => {
+            document.getElementById('crafting-panel').style.display = 'block';
+        });
     }
 
     function initAudio() {
@@ -441,17 +472,17 @@
         playerBody.castShadow = true;
         playerGroup.add(playerBody);
 
-        const armor = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.6), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.2 }));
-        armor.position.set(0, 1.4, 0);
-        playerGroup.add(armor);
+        chestArmorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.6), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.2 }));
+        chestArmorMesh.position.set(0, 1.4, 0);
+        playerGroup.add(chestArmorMesh);
 
         headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 }));
         headMesh.position.y = 2.15;
         playerGroup.add(headMesh);
 
-        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.2), new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 1.2 }));
-        visor.position.set(0, 2.18, 0.25);
-        playerGroup.add(visor);
+        visorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.2), new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 1.2 }));
+        visorMesh.position.set(0, 2.18, 0.25);
+        playerGroup.add(visorMesh);
 
         const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
         leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.9, 0.4), legMat);
@@ -477,13 +508,11 @@
         playerGroup.add(gunMesh);
     }
 
-    // Transform Boss into an ALIEN TITAN BEAST!
     function createAlienTitanBeastBoss() {
         bossGroup = new THREE.Group();
         bossGroup.position.set(0, 0, 15);
         scene.add(bossGroup);
 
-        // 1. Organic Bio-Armor Alien Torso (Dark Bio-Green & Xenomorph Shell)
         const bodyGeo = new THREE.SphereGeometry(3.5, 24, 24);
         bodyGeo.scale(1.0, 1.4, 1.0);
         const bodyMat = new THREE.MeshStandardMaterial({ 
@@ -500,7 +529,6 @@
         bossGroup.add(bossBody);
         hitboxes.push(bossBody);
 
-        // 2. Bio-Luminescent Core Energy Matrix
         const coreGeo = new THREE.SphereGeometry(1.5, 24, 24);
         const coreMat = new THREE.MeshStandardMaterial({ 
             color: 0x10b981, 
@@ -516,7 +544,6 @@
         bioLight.position.set(0, 4.5, 2.5);
         bossGroup.add(bioLight);
 
-        // 3. Bio-Alien Spikes & Back Tentacles
         for (let i = -2; i <= 2; i += 2) {
             const spikeGeo = new THREE.ConeGeometry(0.3, 3.5, 8);
             const spikeMat = new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.3 });
@@ -526,7 +553,6 @@
             bossGroup.add(spike);
         }
 
-        // 4. Bio-Alien Tentacle Claws
         const tentacleGeo = new THREE.CylinderGeometry(0.4, 0.9, 6.0, 12);
         const tentacleMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.3 });
         
@@ -540,7 +566,6 @@
         bossRightTentacle.rotation.z = -Math.PI / 6;
         bossGroup.add(bossRightTentacle);
 
-        // 5. Alien Head Weakspot (Multiple Glowing Eyes Skull)
         const headGeo = new THREE.SphereGeometry(2.4, 20, 20);
         headGeo.scale(1.1, 0.9, 1.2);
         const headMat = new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.15, metalness: 0.7 });
@@ -551,7 +576,6 @@
         bossGroup.add(bossHead);
         hitboxes.push(bossHead);
 
-        // Glowing Xenomorph Alien Eyes (Red & Purple Bio-Emissive)
         [-0.8, 0.8, -0.4, 0.4].forEach((xOff, idx) => {
             const eyeGeo = new THREE.SphereGeometry(0.35, 12, 12);
             const eyeMat = new THREE.MeshStandardMaterial({ 
@@ -564,7 +588,6 @@
             bossGroup.add(eye);
         });
 
-        // 6. Alien Chest Carapace Shield
         const armorGeo = new THREE.BoxGeometry(3.8, 3.8, 0.9);
         const armorMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.9, roughness: 0.1 });
         bossArmor = new THREE.Mesh(armorGeo, armorMat);
@@ -573,7 +596,6 @@
         bossGroup.add(bossArmor);
         hitboxes.push(bossArmor);
 
-        // Telegraphed Attack Ring Indicator
         const ringGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 32);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.65 });
         attackIndicator = new THREE.Mesh(ringGeo, ringMat);
@@ -589,19 +611,32 @@
         cameraPitch = 0.0;
     }
 
+    // Toggle Camera View with PERFECT FPV (Nothing blocking camera vision!)
     function toggleCameraView() {
         currentCamModeIndex = (currentCamModeIndex + 1) % cameraModes.length;
         const mode = cameraModes[currentCamModeIndex];
         document.getElementById('btn-cam-toggle').innerText = `📷 VIEW: ${mode}`;
 
         if (mode === 'FPV') {
+            // HIDE ALL PLAYER BODY & ARMOR PARTS IN FPV SO VISION IS 100% UNBLOCKED!
             playerBody.visible = false;
+            chestArmorMesh.visible = false;
             headMesh.visible = false;
+            visorMesh.visible = false;
+            leftLeg.visible = false;
+            rightLeg.visible = false;
+
             gunMesh.visible = true;
-            gunMesh.position.set(0.2, 1.9, 0.6);
+            gunMesh.position.set(0.18, 1.9, 0.65); // Gun positioned right in sight view
         } else {
+            // SHOW ALL BODY PARTS IN TPV & CINEMATIC
             playerBody.visible = true;
+            chestArmorMesh.visible = true;
             headMesh.visible = true;
+            visorMesh.visible = true;
+            leftLeg.visible = true;
+            rightLeg.visible = true;
+
             gunMesh.visible = true;
             gunMesh.position.set(0.4, 1.45, 0.5);
         }
@@ -732,7 +767,7 @@
             document.getElementById('crafting-panel').style.display = 'none';
         });
 
-        // REVERSED A & D CONTROLS AS REQUESTED: A = Right (+1), D = Left (-1)
+        // REVERSED A & D CONTROLS: A = Right (+1), D = Left (-1)
         setInterval(() => {
             kbMoveInput.x = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
             kbMoveInput.y = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
@@ -836,10 +871,11 @@
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
+            // First Person View: Camera placed right in front of head/eyes at Y = 2.1
             camera.position.set(
                 playerGroup.position.x + shakeX,
-                playerGroup.position.y + 2.1 + recoilOffset * 0.1 + shakeY,
-                playerGroup.position.z
+                playerGroup.position.y + 2.15 + recoilOffset * 0.1 + shakeY,
+                playerGroup.position.z + 0.15
             );
             camera.lookAt(targetX, targetY, targetZ);
         }
