@@ -65,6 +65,7 @@
         #btn-fire { bottom: 45px; right: 135px; width: 95px; height: 95px; background: rgba(225, 29, 72, 0.9); border-color: #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.7); font-size: 17px; }
         #btn-ads { bottom: 155px; right: 35px; background: rgba(2, 132, 199, 0.85); }
         #btn-reload { bottom: 155px; right: 125px; }
+        #btn-slide { bottom: 155px; right: 215px; background: rgba(16, 185, 129, 0.85); }
         #btn-cam-toggle { top: 145px; left: 30px; width: auto; height: 40px; padding: 0 18px; border-radius: 20px; font-size: 12px; background: rgba(147, 51, 234, 0.85); border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5); }
         #btn-lockon { bottom: 240px; right: 35px; width: auto; height: 42px; padding: 0 18px; border-radius: 21px; font-size: 12px; background: rgba(245, 158, 11, 0.85); border-color: #fbbf24; }
         #btn-craft { bottom: 45px; left: 200px; width: auto; height: 48px; padding: 0 22px; border-radius: 10px; background: rgba(14, 165, 233, 0.85); border-color: #38bdf8; font-size: 14px; }
@@ -157,6 +158,7 @@
         <div id="btn-fire" class="hud-element btn-action">FIRE</div>
         <div id="btn-ads" class="hud-element btn-action">SCOPE</div>
         <div id="btn-reload" class="hud-element btn-action">RELOAD</div>
+        <div id="btn-slide" class="hud-element btn-action">SLIDE</div>
         <div id="btn-lockon" class="hud-element btn-action">🎯 LOCK BOSS</div>
         <div id="btn-craft" class="hud-element btn-action">🛠️ WEAPON BENCH</div>
     </div>
@@ -227,7 +229,7 @@
     let baseBossHP = 3700;
     let bossMaxHP = 3700, bossCurrentHP = 2545;
     let bossSpeed = 0.07;
-    let isEnraged = false, isAttacking = false;
+    let isEnraged = false, isPhase3 = false, isAttacking = false;
 
     let moveInput = { x: 0, y: 0 };
     let kbMoveInput = { x: 0, y: 0 };
@@ -237,6 +239,8 @@
     let lastFireTime = 0;
     let recoilOffset = 0;
     let cameraShake = 0;
+    let isSliding = false;
+    let slideTimer = 0;
 
     let challengeActive = false, challengeGoal = 0, challengeProgress = 0;
     let overdriveBuff = 1.0;
@@ -318,6 +322,9 @@
         createPlayerHero();
         createBossTitanPlaceholder();
         faceBoss();
+
+        // Pre-allocate object pools
+        initObjectPools();
 
         // Load User's Custom 3D Model GLB File!
         loadUserGLTFBossModel(LOCAL_BOSS_MODEL_URL);
@@ -784,6 +791,15 @@
 
         document.getElementById('btn-ads').addEventListener('click', () => isADS = !isADS);
         document.getElementById('btn-reload').addEventListener('click', reloadWeapon);
+        const slideBtn = document.getElementById('btn-slide');
+        slideBtn.addEventListener('mousedown', e => {
+            if(!isSliding) { isSliding = true; slideTimer = 20; initAudio(); }
+            e.stopPropagation();
+        });
+        slideBtn.addEventListener('touchstart', e => {
+            if(!isSliding) { isSliding = true; slideTimer = 20; initAudio(); }
+            e.stopPropagation();
+        });
         document.getElementById('btn-cam-toggle').addEventListener('click', toggleCameraView);
         document.getElementById('btn-lockon').addEventListener('click', faceBoss);
         document.getElementById('btn-craft').addEventListener('click', () => {
@@ -818,16 +834,18 @@
             emberParticles.geometry.attributes.position.needsUpdate = true;
         }
 
-        for (let i = spentCasings.length - 1; i >= 0; i--) {
+        for (let i = 0; i < spentCasings.length; i++) {
             const c = spentCasings[i];
-            c.mesh.position.add(c.vel);
-            c.vel.y -= 0.015;
-            c.mesh.rotation.x += 0.2;
-            c.mesh.rotation.y += 0.2;
-            c.life -= 0.03;
-            if (c.life <= 0 || c.mesh.position.y <= 0.1) {
-                scene.remove(c.mesh);
-                spentCasings.splice(i, 1);
+            if (c.life > 0) {
+                c.mesh.position.add(c.vel);
+                c.vel.y -= 0.015;
+                c.mesh.rotation.x += 0.2;
+                c.mesh.rotation.y += 0.2;
+                c.life -= 0.03;
+                if (c.life <= 0 || c.mesh.position.y <= 0.1) {
+                    c.life = 0;
+                    c.mesh.visible = false;
+                }
             }
         }
 
@@ -848,12 +866,26 @@
         const rightX = Math.cos(cameraYaw);
         const rightZ = -Math.sin(cameraYaw);
 
-        const speed = 0.18;
+        if (isSliding) {
+            slideTimer--;
+            cameraPitch = Math.min(0.2, cameraPitch + 0.05); // Tilt camera down slightly when sliding
+            if (slideTimer <= 0) {
+                isSliding = false;
+            }
+        }
+
+        const currentSpeed = isSliding ? 0.45 : 0.18;
         let deltaX = (rightX * rawX) + (forwardX * rawY);
         let deltaZ = (rightZ * rawX) + (forwardZ * rawY);
 
-        let nextX = playerGroup.position.x + deltaX * speed;
-        let nextZ = playerGroup.position.z + deltaZ * speed;
+        // If sliding but no input, slide forward
+        if (isSliding && rawX === 0 && rawY === 0) {
+            deltaX = forwardX;
+            deltaZ = forwardZ;
+        }
+
+        let nextX = playerGroup.position.x + deltaX * currentSpeed;
+        let nextZ = playerGroup.position.z + deltaZ * currentSpeed;
 
         rockObstacles.forEach(rock => {
             const dist = Math.hypot(nextX - rock.pos.x, nextZ - rock.pos.z);
@@ -881,21 +913,41 @@
         const shakeX = (Math.random() - 0.5) * cameraShake;
         const shakeY = (Math.random() - 0.5) * cameraShake;
 
+        let headBobY = 0;
+        let weaponSwayX = 0;
+        let weaponSwayY = 0;
+
+        if (isMoving) {
+            const bobSpeed = isSliding ? 8 : (isADS ? 2 : 4);
+            const bobAmount = isSliding ? 0.08 : (isADS ? 0.01 : 0.04);
+            headBobY = Math.abs(Math.sin(animTime * bobSpeed)) * bobAmount;
+
+            weaponSwayX = Math.cos(animTime * bobSpeed * 0.5) * bobAmount * 0.5;
+            weaponSwayY = Math.sin(animTime * bobSpeed) * bobAmount * 0.5;
+        }
+
+        if (gunMesh && mode !== 'FPV') {
+            gunMesh.position.set(0.4 + weaponSwayX, 1.45 + weaponSwayY, 0.5);
+        }
+
         if (mode === 'TPV') {
             const distance = isADS ? 2.2 : 3.8;
             const height = isADS ? 2.3 : 2.7;
 
             const camX = playerGroup.position.x - Math.sin(cameraYaw) * distance + shakeX;
             const camZ = playerGroup.position.z - Math.cos(cameraYaw) * distance;
-            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance + recoilOffset * 0.1 + shakeY;
+            const camY = playerGroup.position.y + height + Math.sin(cameraPitch) * distance + recoilOffset * 0.1 + shakeY + headBobY;
 
             camera.position.set(camX, camY, camZ);
             camera.lookAt(targetX, targetY, targetZ);
         }
         else if (mode === 'FPV') {
+            if (gunMesh) {
+                gunMesh.position.set(0.18 + weaponSwayX, 1.9 + weaponSwayY, 0.65);
+            }
             camera.position.set(
                 playerGroup.position.x + shakeX,
-                playerGroup.position.y + 2.15 + recoilOffset * 0.1 + shakeY,
+                playerGroup.position.y + 2.15 + recoilOffset * 0.1 + shakeY + headBobY,
                 playerGroup.position.z + 0.15
             );
             camera.lookAt(targetX, targetY, targetZ);
@@ -915,14 +967,16 @@
             }
         }
 
-        for (let i = particleSparks.length - 1; i >= 0; i--) {
+        for (let i = 0; i < particleSparks.length; i++) {
             const p = particleSparks[i];
-            p.mesh.position.add(p.vel);
-            p.mesh.scale.multiplyScalar(0.9);
-            p.life -= 0.05;
-            if (p.life <= 0) {
-                scene.remove(p.mesh);
-                particleSparks.splice(i, 1);
+            if (p.life > 0) {
+                p.mesh.position.add(p.vel);
+                p.mesh.scale.multiplyScalar(0.9);
+                p.life -= 0.05;
+                if (p.life <= 0) {
+                    p.life = 0;
+                    p.mesh.visible = false;
+                }
             }
         }
 
@@ -981,7 +1035,7 @@
         lastFireTime = now;
         currentAmmo--;
         recoilOffset = 0.25;
-        cameraShake = 0.3;
+        cameraShake = 0.4;
         playSound('fire');
         updateHUD();
 
@@ -1040,39 +1094,75 @@
                 document.getElementById('boss-phase-badge').innerText = 'PHASE 2: ENRAGED!';
             }
 
+            if (!isPhase3 && bossCurrentHP <= bossMaxHP * 0.25) {
+                isPhase3 = true;
+                if (bossBody) bossBody.material.color.setHex(0xb91c1c);
+                bossSpeed *= 1.3;
+                document.getElementById('boss-phase-badge').innerText = 'PHASE 3: DESPERATION!';
+            }
+
             if (bossCurrentHP <= 0) levelCleared();
         }
     }
 
-    function ejectBrassCasing(pos) {
+    function initObjectPools() {
         const casingGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.1, 8);
         const casingMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.1 });
-        const casing = new THREE.Mesh(casingGeo, casingMat);
-        casing.position.copy(pos);
-        scene.add(casing);
+        for (let i = 0; i < 30; i++) {
+            const casing = new THREE.Mesh(casingGeo, casingMat);
+            casing.visible = false;
+            scene.add(casing);
+            spentCasings.push({ mesh: casing, vel: new THREE.Vector3(), life: 0 });
+        }
 
-        const vel = new THREE.Vector3(
+        const sparkGeo = new THREE.SphereGeometry(0.12, 8, 8);
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        for (let i = 0; i < 50; i++) {
+            const spark = new THREE.Mesh(sparkGeo, sparkMat);
+            spark.visible = false;
+            scene.add(spark);
+            particleSparks.push({ mesh: spark, vel: new THREE.Vector3(), life: 0 });
+        }
+    }
+
+    function ejectBrassCasing(pos) {
+        let casingObj = spentCasings.find(c => c.life <= 0);
+        if (!casingObj) {
+            // expand pool if needed
+            const casingGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.1, 8);
+            const casingMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.1 });
+            const casing = new THREE.Mesh(casingGeo, casingMat);
+            scene.add(casing);
+            casingObj = { mesh: casing, vel: new THREE.Vector3(), life: 0 };
+            spentCasings.push(casingObj);
+        }
+
+        casingObj.mesh.position.copy(pos);
+        casingObj.mesh.visible = true;
+        casingObj.vel.set(
             (Math.random() * 0.2 + 0.1),
             (Math.random() * 0.1 + 0.1),
             (Math.random() * 0.2 - 0.1)
         );
-        spentCasings.push({ mesh: casing, vel: vel, life: 1.0 });
+        casingObj.life = 1.0;
     }
 
     function spawnHitSparks(pos) {
-        const sparkGeo = new THREE.SphereGeometry(0.12, 8, 8);
-        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-        for (let i = 0; i < 8; i++) {
-            const spark = new THREE.Mesh(sparkGeo, sparkMat);
-            spark.position.copy(pos);
-            scene.add(spark);
-
-            const vel = new THREE.Vector3(
-                (Math.random() - 0.5) * 0.5,
-                Math.random() * 0.5,
-                (Math.random() - 0.5) * 0.5
-            );
-            particleSparks.push({ mesh: spark, vel: vel, life: 1.0 });
+        let activeCount = 0;
+        for (let i = 0; i < particleSparks.length && activeCount < 8; i++) {
+            let sparkObj = particleSparks[i];
+            if (sparkObj.life <= 0) {
+                sparkObj.mesh.position.copy(pos);
+                sparkObj.mesh.scale.set(1, 1, 1);
+                sparkObj.mesh.visible = true;
+                sparkObj.vel.set(
+                    (Math.random() - 0.5) * 0.5,
+                    Math.random() * 0.5,
+                    (Math.random() - 0.5) * 0.5
+                );
+                sparkObj.life = 1.0;
+                activeCount++;
+            }
         }
     }
 
@@ -1081,18 +1171,39 @@
         document.getElementById('boss-phase-badge').innerText = 'WARNING: INCOMING ATTACK!';
 
         let scale = 0;
+        let jumpHeight = 0;
+        const attackSpeed = isPhase3 ? 0.6 : 0.3;
+        const maxScale = isPhase3 ? 12 : 8;
+
         const interval = setInterval(() => {
-            scale += 0.3;
+            scale += attackSpeed;
             attackIndicator.scale.set(scale, 1, scale);
-            if (scale >= 8) {
+
+            if (isPhase3) {
+                jumpHeight = Math.sin((scale / maxScale) * Math.PI) * 15;
+                if (bossCustomModel) bossCustomModel.position.y = jumpHeight;
+                if (bossBody) bossBody.position.y = 3.75 + jumpHeight;
+                if (bossHead) bossHead.position.y = 8.8 + jumpHeight;
+            }
+
+            if (scale >= maxScale) {
                 clearInterval(interval);
                 attackIndicator.scale.set(0.1, 1, 0.1);
+
+                if (bossCustomModel) bossCustomModel.position.y = 0;
+                if (bossBody) bossBody.position.y = 3.75;
+                if (bossHead) bossHead.position.y = 8.8;
+
                 isAttacking = false;
-                document.getElementById('boss-phase-badge').innerText = isEnraged ? 'PHASE 2: ENRAGED!' : 'PHASE 1: ENEMY DETECTED';
+
+                let phaseText = 'PHASE 1: ENEMY DETECTED';
+                if (isPhase3) phaseText = 'PHASE 3: DESPERATION!';
+                else if (isEnraged) phaseText = 'PHASE 2: ENRAGED!';
+                document.getElementById('boss-phase-badge').innerText = phaseText;
                 
                 const dist = playerGroup.position.distanceTo(bossGroup.position);
-                if (dist < 8) {
-                    damagePlayer(30);
+                if (dist < maxScale) {
+                    damagePlayer(isPhase3 ? 50 : 30);
                 }
             }
         }, 50);
@@ -1100,7 +1211,7 @@
 
     function damagePlayer(dmg) {
         playerCurrentHP = Math.max(0, playerCurrentHP - dmg);
-        cameraShake = 0.8;
+        cameraShake = 1.2; // Increased camera shake/trauma when hit
         updateHUD();
 
         if (playerCurrentHP <= 0) {
@@ -1227,6 +1338,8 @@
         bossCurrentHP = bossMaxHP;
         bossSpeed += 0.01;
         isEnraged = false;
+        isPhase3 = false;
+        if (bossBody) bossBody.material.color.setHex(0x475569);
         bossGroup.position.set(0, 0, 20);
         document.getElementById('boss-phase-badge').innerText = 'PHASE 1: ENEMY DETECTED';
         faceBoss();
