@@ -30,6 +30,9 @@ namespace MobileShooter.Player
         // Recoil state
         private Vector2 recoilOffset;
 
+        // Cached impact material to prevent reallocation per shot
+        private static Material cachedImpactMaterial;
+
         // Interface References
         private CharacterController characterController;
         private IInputProvider inputProvider;
@@ -219,9 +222,12 @@ namespace MobileShooter.Player
             Renderer ren = spark.GetComponent<Renderer>();
             if (ren != null)
             {
-                Material m = new Material(Shader.Find("Unlit/Color") ?? Shader.Find("Diffuse"));
-                m.color = Color.yellow;
-                ren.material = m;
+                if (cachedImpactMaterial == null)
+                {
+                    cachedImpactMaterial = new Material(Shader.Find("Unlit/Color") ?? Shader.Find("Diffuse"));
+                    cachedImpactMaterial.color = Color.yellow;
+                }
+                ren.sharedMaterial = cachedImpactMaterial;
             }
 
             Collider c = spark.GetComponent<Collider>();
