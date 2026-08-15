@@ -23,6 +23,7 @@ namespace MobileShooter.Boss
         private float currentAttackCooldown;
         private float lastAttackTime;
         private bool isAttacking;
+        private float playerSearchTimer;
 
         private BossHealth bossHealth;
 
@@ -52,9 +53,18 @@ namespace MobileShooter.Boss
             if (bossHealth != null && bossHealth.IsDead) return;
             if (targetPlayer == null)
             {
-                GameObject p = GameObject.FindWithTag("Player");
-                if (p != null) targetPlayer = p.transform;
-                else return;
+                playerSearchTimer -= Time.deltaTime;
+                if (playerSearchTimer <= 0f)
+                {
+                    playerSearchTimer = 0.5f; // Search every 0.5 seconds
+                    GameObject p = GameObject.FindWithTag("Player");
+                    if (p != null) targetPlayer = p.transform;
+                    else return;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             switch (currentState)
