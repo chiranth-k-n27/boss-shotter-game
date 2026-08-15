@@ -50,12 +50,7 @@ namespace MobileShooter.Boss
         private void Update()
         {
             if (bossHealth != null && bossHealth.IsDead) return;
-            if (targetPlayer == null)
-            {
-                GameObject p = GameObject.FindWithTag("Player");
-                if (p != null) targetPlayer = p.transform;
-                else return;
-            }
+            if (targetPlayer == null) return;
 
             switch (currentState)
             {
