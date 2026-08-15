@@ -35,6 +35,8 @@ namespace MobileShooter.Core
         public float damageMultiplierBuff = 1.0f;
         public bool isInfiniteAmmoBuffActive = false;
 
+        private static Shader cachedStandardShader;
+
         private void Awake()
         {
             if (baseWeaponData == null)
@@ -181,7 +183,12 @@ namespace MobileShooter.Core
             Renderer ren = obj.GetComponent<Renderer>();
             if (ren != null)
             {
-                Material mat = new Material(Shader.Find("Standard") ?? Shader.Find("Diffuse"));
+                if (cachedStandardShader == null)
+                {
+                    cachedStandardShader = Shader.Find("Standard") ?? Shader.Find("Diffuse");
+                }
+
+                Material mat = new Material(cachedStandardShader);
                 mat.color = color;
                 ren.material = mat;
             }
