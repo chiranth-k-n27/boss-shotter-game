@@ -53,7 +53,6 @@ namespace MobileShooter.Boss
             currentHealth -= finalDamage;
             currentHealth = Mathf.Max(0f, currentHealth);
 
-            // Trigger events for UI damage numbers & HUD
             GameEvents.TriggerBossTookDamage(finalDamage, hitboxType, hitPoint);
             
             BossState currentState = isEnraged ? BossState.Phase2Enrage : BossState.PatrolApproach;
