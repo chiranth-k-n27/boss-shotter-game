@@ -21,12 +21,16 @@ namespace MobileShooter.Boss
         private bool isEnraged;
         private Coroutine flashCoroutine;
 
+        private MaterialPropertyBlock propBlock;
+        private static readonly int colorPropID = Shader.PropertyToID("_Color");
+
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
         public bool IsDead => isDead;
 
         private void Start()
         {
+            propBlock = new MaterialPropertyBlock();
             currentHealth = maxHealth;
             if (bossRenderers == null || bossRenderers.Length == 0)
             {
@@ -115,9 +119,11 @@ namespace MobileShooter.Boss
             if (bossRenderers == null) return;
             foreach (Renderer ren in bossRenderers)
             {
-                if (ren != null && ren.material != null)
+                if (ren != null)
                 {
-                    ren.material.color = col;
+                    ren.GetPropertyBlock(propBlock);
+                    propBlock.SetColor(colorPropID, col);
+                    ren.SetPropertyBlock(propBlock);
                 }
             }
         }
