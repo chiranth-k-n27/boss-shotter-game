@@ -29,8 +29,6 @@ namespace MobileShooter.Core
     public interface IWeapon
     {
         void Fire();
-        void StartADS();
-        void StopADS();
         void Reload();
         int CurrentAmmo { get; }
         int MaxAmmo { get; }
