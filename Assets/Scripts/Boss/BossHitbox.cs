@@ -3,9 +3,26 @@ using MobileShooter.Core;
 
 namespace MobileShooter.Boss
 {
+    using System.Collections.Generic;
+
     public class BossHitbox : MonoBehaviour
     {
+        public static readonly List<BossHitbox> ActiveHitboxes = new List<BossHitbox>();
+
         public HitboxType hitboxType = HitboxType.Body;
+
+        private void OnEnable()
+        {
+            if (!ActiveHitboxes.Contains(this))
+            {
+                ActiveHitboxes.Add(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            ActiveHitboxes.Remove(this);
+        }
 
         public float GetDamageMultiplier()
         {
