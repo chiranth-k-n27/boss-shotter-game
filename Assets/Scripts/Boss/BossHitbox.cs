@@ -1,10 +1,23 @@
 using UnityEngine;
+using System.Collections.Generic;
 using MobileShooter.Core;
 
 namespace MobileShooter.Boss
 {
     public class BossHitbox : MonoBehaviour
     {
+        public static readonly List<BossHitbox> ActiveHitboxes = new List<BossHitbox>();
+
+        private void OnEnable()
+        {
+            ActiveHitboxes.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            ActiveHitboxes.Remove(this);
+        }
+
         public HitboxType hitboxType = HitboxType.Body;
 
         public float GetDamageMultiplier()
