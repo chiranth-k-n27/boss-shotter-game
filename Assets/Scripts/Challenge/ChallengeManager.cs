@@ -220,8 +220,7 @@ namespace MobileShooter.Challenge
 
         private void ShatterBossArmor()
         {
-            BossHitbox[] hitboxes = FindObjectsOfType<BossHitbox>();
-            foreach (var h in hitboxes)
+            foreach (var h in BossHitbox.ActiveHitboxes)
             {
                 if (h.hitboxType == HitboxType.Armor)
                 {
