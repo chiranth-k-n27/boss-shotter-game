@@ -20,6 +20,7 @@ namespace MobileShooter.Boss
         private bool isDead;
         private bool isEnraged;
         private Coroutine flashCoroutine;
+        private BossAIController cachedAI;
 
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
@@ -27,6 +28,7 @@ namespace MobileShooter.Boss
 
         private void Start()
         {
+            cachedAI = GetComponent<BossAIController>();
             currentHealth = maxHealth;
             if (bossRenderers == null || bossRenderers.Length == 0)
             {
@@ -94,10 +96,9 @@ namespace MobileShooter.Boss
             isEnraged = true;
             SetBossBaseColor(enrageColor);
             
-            BossAIController ai = GetComponent<BossAIController>();
-            if (ai != null)
+            if (cachedAI != null)
             {
-                ai.ForceState(BossState.Phase2Enrage);
+                cachedAI.ForceState(BossState.Phase2Enrage);
             }
 
             GameEvents.TriggerBossStateChanged(BossState.Phase2Enrage);
