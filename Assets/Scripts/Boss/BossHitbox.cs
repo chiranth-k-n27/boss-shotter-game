@@ -6,6 +6,12 @@ namespace MobileShooter.Boss
     public class BossHitbox : MonoBehaviour
     {
         public HitboxType hitboxType = HitboxType.Body;
+        public IDamageable Damageable { get; private set; }
+
+        private void Awake()
+        {
+            Damageable = GetComponentInParent<IDamageable>();
+        }
 
         public float GetDamageMultiplier()
         {

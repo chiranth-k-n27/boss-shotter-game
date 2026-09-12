@@ -154,16 +154,21 @@ namespace MobileShooter.Player
 
             if (Physics.Raycast(ray, out RaycastHit hit, 200f))
             {
-                IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+                HitboxType hitboxType = HitboxType.Body;
+                IDamageable damageable = null;
+
+                if (hit.collider.TryGetComponent(out MobileShooter.Boss.BossHitbox hitbox))
+                {
+                    hitboxType = hitbox.hitboxType;
+                    damageable = hitbox.Damageable;
+                }
+                else
+                {
+                    damageable = hit.collider.GetComponentInParent<IDamageable>();
+                }
+
                 if (damageable != null)
                 {
-                    HitboxType hitboxType = HitboxType.Body;
-                    BossHitbox hitbox = hit.collider.GetComponent<BossHitbox>();
-                    if (hitbox != null)
-                    {
-                        hitboxType = hitbox.hitboxType;
-                    }
-
                     damageable.TakeDamage(CurrentDamage, hitboxType, hit.point, hit.normal);
                 }
 
