@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using MobileShooter.Core;
 using MobileShooter.Events;
+using MobileShooter.Level;
 
 namespace MobileShooter.Boss
 {
@@ -38,10 +39,9 @@ namespace MobileShooter.Boss
             currentMoveSpeed = baseMoveSpeed;
             currentAttackCooldown = attackCooldown;
 
-            if (targetPlayer == null)
+            if (targetPlayer == null && LevelManager.Instance != null)
             {
-                GameObject p = GameObject.FindWithTag("Player");
-                if (p != null) targetPlayer = p.transform;
+                targetPlayer = LevelManager.Instance.playerTransform;
             }
 
             TransitionToState(BossState.PatrolApproach);
@@ -52,9 +52,15 @@ namespace MobileShooter.Boss
             if (bossHealth != null && bossHealth.IsDead) return;
             if (targetPlayer == null)
             {
-                GameObject p = GameObject.FindWithTag("Player");
-                if (p != null) targetPlayer = p.transform;
-                else return;
+                if (LevelManager.Instance != null)
+                {
+                    targetPlayer = LevelManager.Instance.playerTransform;
+                }
+
+                if (targetPlayer == null)
+                {
+                    return;
+                }
             }
 
             switch (currentState)
