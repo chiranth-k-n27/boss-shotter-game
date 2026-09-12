@@ -20,6 +20,7 @@ namespace MobileShooter.Boss
         private bool isDead;
         private bool isEnraged;
         private Coroutine flashCoroutine;
+        private WaitForSeconds flashWait;
 
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
@@ -27,6 +28,7 @@ namespace MobileShooter.Boss
 
         private void Start()
         {
+            flashWait = new WaitForSeconds(0.08f);
             currentHealth = maxHealth;
             if (bossRenderers == null || bossRenderers.Length == 0)
             {
@@ -85,7 +87,7 @@ namespace MobileShooter.Boss
         {
             Color baseCol = isEnraged ? enrageColor : defaultColor;
             SetBossBaseColor(flashColor);
-            yield return new WaitForSeconds(0.08f);
+            yield return flashWait;
             SetBossBaseColor(baseCol);
         }
 
