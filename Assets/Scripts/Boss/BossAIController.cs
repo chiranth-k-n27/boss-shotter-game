@@ -26,6 +26,9 @@ namespace MobileShooter.Boss
 
         private BossHealth bossHealth;
 
+        private Transform cachedTargetPlayer;
+        private IDamageable cachedPlayerDamageable;
+
         public BossState CurrentState => currentState;
 
         private void Awake()
@@ -148,6 +151,16 @@ namespace MobileShooter.Boss
             TransitionToState(previousState == BossState.Phase2Enrage ? BossState.Phase2Enrage : BossState.PatrolApproach);
         }
 
+        private IDamageable GetPlayerDamageable()
+        {
+            if (targetPlayer != cachedTargetPlayer)
+            {
+                cachedTargetPlayer = targetPlayer;
+                cachedPlayerDamageable = targetPlayer != null ? targetPlayer.GetComponent<IDamageable>() : null;
+            }
+            return cachedPlayerDamageable;
+        }
+
         private void ExecuteBossSlam()
         {
             // Calculate distance to player
@@ -157,7 +170,7 @@ namespace MobileShooter.Boss
                 if (dist <= attackRange * 1.2f)
                 {
                     // Deal damage to player if player has damage receiver
-                    IDamageable playerDamageable = targetPlayer.GetComponent<IDamageable>();
+                    IDamageable playerDamageable = GetPlayerDamageable();
                     if (playerDamageable != null)
                     {
                         playerDamageable.TakeDamage(25f, HitboxType.Body, targetPlayer.position, Vector3.up);
