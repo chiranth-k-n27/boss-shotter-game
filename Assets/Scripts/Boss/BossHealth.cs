@@ -38,7 +38,7 @@ namespace MobileShooter.Boss
 
         public void TakeDamage(float rawDamage, HitboxType hitboxType, Vector3 hitPoint, Vector3 hitNormal)
         {
-            if (isDead) return;
+            if (isDead || rawDamage <= 0f) return;
 
             // Calculate multiplier from hitbox
             float multiplier = 1.0f;
