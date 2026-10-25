@@ -29,7 +29,6 @@ namespace MobileShooter.Input
         private int lookTouchId = -1;
 
         private Vector2 joystickCenter;
-        private Vector2 currentTouchMovePos;
         private Vector2 lastLookTouchPos;
 
         private void Update()
