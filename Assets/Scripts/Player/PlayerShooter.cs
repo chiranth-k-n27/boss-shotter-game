@@ -172,9 +172,6 @@ namespace MobileShooter.Player
             }
         }
 
-        public void StartADS() { }
-        public void StopADS() { }
-
         public void Reload()
         {
             if (isReloading) return;
