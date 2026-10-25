@@ -494,12 +494,18 @@ namespace MobileShooter.Bootstrap
             return btn;
         }
 
+        private static Shader cachedStandardShader;
+
         private static void SetObjectColor(GameObject obj, Color col)
         {
             Renderer r = obj.GetComponent<Renderer>();
             if (r != null)
             {
-                Material m = new Material(Shader.Find("Standard") ?? Shader.Find("Diffuse"));
+                if (cachedStandardShader == null)
+                {
+                    cachedStandardShader = Shader.Find("Standard") ?? Shader.Find("Diffuse");
+                }
+                Material m = new Material(cachedStandardShader);
                 m.color = col;
                 r.material = m;
             }
