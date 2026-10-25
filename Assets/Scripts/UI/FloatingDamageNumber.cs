@@ -15,7 +15,7 @@ namespace MobileShooter.UI
         private Vector3 worldPosition;
         private float lifetime = 1.0f;
         private float elapsedTime;
-        private Camera mainCam;
+        private static Camera cachedMainCam;
 
         private static List<FloatingDamageNumber> pool = new List<FloatingDamageNumber>();
         private static Transform poolParent;
@@ -65,7 +65,7 @@ namespace MobileShooter.UI
         {
             worldPosition = pos + Vector3.up * 0.5f;
             elapsedTime = 0f;
-            mainCam = Camera.main;
+            if (cachedMainCam == null) cachedMainCam = Camera.main;
 
             int intDmg = Mathf.RoundToInt(damage);
             textComponent.text = intDmg.ToString();
@@ -112,10 +112,10 @@ namespace MobileShooter.UI
 
         private void UpdateScreenPosition()
         {
-            if (mainCam == null) mainCam = Camera.main;
-            if (mainCam == null) return;
+            if (cachedMainCam == null) cachedMainCam = Camera.main;
+            if (cachedMainCam == null) return;
 
-            Vector3 screenPos = mainCam.WorldToScreenPoint(worldPosition);
+            Vector3 screenPos = cachedMainCam.WorldToScreenPoint(worldPosition);
             rectTransform.position = screenPos;
         }
     }
