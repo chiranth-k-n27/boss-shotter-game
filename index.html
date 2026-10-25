@@ -196,6 +196,14 @@
     </div>
 
 <script>
+
+    // Secure random number generator
+    const _cryptoBuffer = new Uint32Array(1);
+    function secureRandom() {
+        window.crypto.getRandomValues(_cryptoBuffer);
+        return _cryptoBuffer[0] / (0xffffffff + 1);
+    }
+
     let scene, camera, renderer;
     let playerGroup, playerBody, headMesh, chestArmorMesh, visorMesh, gunMesh, leftLeg, rightLeg;
     let bossGroup, bossHead, bossBody, bossArmor, attackIndicator;
@@ -484,8 +492,8 @@
         const ctx1 = c1.getContext('2d');
         ctx1.fillStyle = '#808080'; ctx1.fillRect(0,0,512,512);
         for(let i=0; i<8000; i++) {
-            ctx1.fillStyle = Math.random() > 0.5 ? '#a0a0a0' : '#606060';
-            ctx1.fillRect(Math.random()*512, Math.random()*512, 3, 3);
+            ctx1.fillStyle = secureRandom() > 0.5 ? '#a0a0a0' : '#606060';
+            ctx1.fillRect(secureRandom()*512, secureRandom()*512, 3, 3);
         }
         wetAsphaltNormalMap = new THREE.CanvasTexture(c1);
         wetAsphaltNormalMap.wrapS = THREE.RepeatWrapping;
@@ -500,8 +508,8 @@
             ctx3.strokeStyle = '#c0c0c0';
             ctx3.lineWidth = 1;
             ctx3.beginPath();
-            ctx3.moveTo(Math.random()*512, Math.random()*512);
-            ctx3.lineTo(Math.random()*512, Math.random()*512);
+            ctx3.moveTo(secureRandom()*512, secureRandom()*512);
+            ctx3.lineTo(secureRandom()*512, secureRandom()*512);
             ctx3.stroke();
         }
         metalScratchNormalMap = new THREE.CanvasTexture(c3);
@@ -512,9 +520,9 @@
         const count = 300;
         const positions = new Float32Array(count * 3);
         for(let i=0; i<count*3; i+=3) {
-            positions[i] = (Math.random() - 0.5) * 80;
-            positions[i+1] = Math.random() * 20;
-            positions[i+2] = (Math.random() - 0.5) * 80;
+            positions[i] = (secureRandom() - 0.5) * 80;
+            positions[i+1] = secureRandom() * 20;
+            positions[i+2] = (secureRandom() - 0.5) * 80;
         }
         emberGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const emberMat = new THREE.PointsMaterial({ color: 0xff0055, size: 0.25, transparent: true, opacity: 0.8 });
@@ -878,8 +886,8 @@
         const targetZ = playerGroup.position.z + Math.cos(cameraYaw) * 20 * Math.cos(cameraPitch);
         const targetY = playerGroup.position.y + 2.1 - Math.tan(cameraPitch) * 20;
 
-        const shakeX = (Math.random() - 0.5) * cameraShake;
-        const shakeY = (Math.random() - 0.5) * cameraShake;
+        const shakeX = (secureRandom() - 0.5) * cameraShake;
+        const shakeY = (secureRandom() - 0.5) * cameraShake;
 
         if (mode === 'TPV') {
             const distance = isADS ? 2.2 : 3.8;
@@ -1052,9 +1060,9 @@
         scene.add(casing);
 
         const vel = new THREE.Vector3(
-            (Math.random() * 0.2 + 0.1),
-            (Math.random() * 0.1 + 0.1),
-            (Math.random() * 0.2 - 0.1)
+            (secureRandom() * 0.2 + 0.1),
+            (secureRandom() * 0.1 + 0.1),
+            (secureRandom() * 0.2 - 0.1)
         );
         spentCasings.push({ mesh: casing, vel: vel, life: 1.0 });
     }
@@ -1068,9 +1076,9 @@
             scene.add(spark);
 
             const vel = new THREE.Vector3(
-                (Math.random() - 0.5) * 0.5,
-                Math.random() * 0.5,
-                (Math.random() - 0.5) * 0.5
+                (secureRandom() - 0.5) * 0.5,
+                secureRandom() * 0.5,
+                (secureRandom() - 0.5) * 0.5
             );
             particleSparks.push({ mesh: spark, vel: vel, life: 1.0 });
         }
