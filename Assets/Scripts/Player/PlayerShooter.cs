@@ -209,6 +209,8 @@ namespace MobileShooter.Player
             }
         }
 
+        private static Shader cachedSparkShader;
+
         private void CreateBulletImpactVFX(Vector3 point, Vector3 normal)
         {
             GameObject spark = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -219,7 +221,11 @@ namespace MobileShooter.Player
             Renderer ren = spark.GetComponent<Renderer>();
             if (ren != null)
             {
-                Material m = new Material(Shader.Find("Unlit/Color") ?? Shader.Find("Diffuse"));
+                if (cachedSparkShader == null)
+                {
+                    cachedSparkShader = Shader.Find("Unlit/Color") ?? Shader.Find("Diffuse");
+                }
+                Material m = new Material(cachedSparkShader);
                 m.color = Color.yellow;
                 ren.material = m;
             }

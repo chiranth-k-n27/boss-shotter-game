@@ -171,6 +171,8 @@ namespace MobileShooter.Core
             }
         }
 
+        private static Shader cachedStandardShader;
+
         private GameObject CreatePrimitiveMesh(PrimitiveShape shape, Color color)
         {
             PrimitiveType pType = PrimitiveType.Cylinder;
@@ -181,7 +183,11 @@ namespace MobileShooter.Core
             Renderer ren = obj.GetComponent<Renderer>();
             if (ren != null)
             {
-                Material mat = new Material(Shader.Find("Standard") ?? Shader.Find("Diffuse"));
+                if (cachedStandardShader == null)
+                {
+                    cachedStandardShader = Shader.Find("Standard") ?? Shader.Find("Diffuse");
+                }
+                Material mat = new Material(cachedStandardShader);
                 mat.color = color;
                 ren.material = mat;
             }
