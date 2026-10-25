@@ -51,7 +51,7 @@ namespace MobileShooter.Boss
 
             float finalDamage = rawDamage * multiplier;
             currentHealth -= finalDamage;
-            currentHealth = Mathf.Max(0f, currentHealth);
+            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
             // Trigger events for UI damage numbers & HUD
             GameEvents.TriggerBossTookDamage(finalDamage, hitboxType, hitPoint);
